@@ -84,4 +84,16 @@ Não copie causa raiz, plano, decisões, saída de comandos ou logs. O handoff a
 
 No `SessionStart` e antes de qualquer transição, reconstrua estado e handoff a partir de `ORQUESTRADOR.md`, `tasks.md`, `BLOQUEIOS.md`, `00-DECISOES.md` e `QA.md`. Esses arquivos são a fonte; estado e handoff são cache. Uma queda depois de persistir uma task não causa escrita imediata: a reconstrução consolida os contadores no próximo marco.
 
+Use o helper instalado, que não produz stdout:
+
+```bash
+python3 .claude/runx-hooks/comum/estado.py reconstruir --ocorrencia docs/manutencao/<OC-ID>-<slug>
+python3 .claude/runx-hooks/comum/estado.py marco --ocorrencia docs/manutencao/<OC-ID>-<slug> \
+  --tipo <transicao|bloqueio|decisao|termino> --id <identificador> --resultado <resultado>
+```
+
+O primeiro comando é executado ao retomar pelo `SessionStart`; `marco` reconstrói dos
+artefatos antes de validar e persistir a mudança. Relógio injetável é reservado às
+fixtures de teste.
+
 Antes de concluir o marco, confirme: quinze chaves presentes; campos alheios preservados; E4→E3 representado; estado e JSONL abaixo de 1 KB; handoff abaixo de 500 tokens e só com caminhos existentes; stdout do helper vazio.

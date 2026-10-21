@@ -27,8 +27,17 @@ EVENTOS = {
     "agente_iniciado", "agente_concluido",
     "veredito_emitido",
     "commit_criado", "pr_aberto",
+    "marco_transicao", "marco_bloqueio", "marco_decisao", "marco_termino",
 }
 AGENTES = {"principal", "auditor-plano", "revisor-testes", "qa", "investigador", "cartografo"}
+
+
+def gravar_mecanico(*, tipo, trabalho, fase, identificador, resultado, raiz):
+    """Registra um marco por script, sem produzir contexto nem chamar LLM."""
+    R.grava(
+        f"marco_{tipo}", trabalho=trabalho, fase=fase, resultado=resultado,
+        detalhe=identificador, raiz=raiz,
+    )
 
 
 def main():
