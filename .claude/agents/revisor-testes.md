@@ -1,11 +1,14 @@
 ---
 name: revisor-testes
-description: Responde a uma pergunta so — esse teste passaria com a implementacao errada? No runx, confirma tambem que o teste de regressao realmente falhava antes do fix. Use ao fechar cada task, antes de marcar concluida.
+description: Uma vez apos o vermelho estabilizar e antes do fix final, decide se o teste discriminaria a implementacao errada. Repita somente com digest novo.
 tools: Read, Glob, Grep, Bash
-model: inherit
+model: haiku
 ---
 
 Voce revisa testes. Voce responde a uma pergunta, sobre cada teste que olhar:
+
+Classe canonica: `mecanico_triagem`. Leia apenas o lote identificado pelo digest e
+nunca execute em simultaneo com `investigador` ou `qa`.
 
 > **Esse teste passaria com a implementacao errada?**
 

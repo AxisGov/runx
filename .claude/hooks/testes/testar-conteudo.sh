@@ -119,42 +119,38 @@ afirma e4-exige-completa \
 
 echo "== investigador por evidencia =="
 
-afirma investigador-corte-tres \
-  "01-investigacao.md traz o corte de 3 arquivos" \
-  bash -c 'grep -qE "3 \(tr[eê]s\)|tr[eê]s ou mais|>= ?3|3 ou mais" "'"$S"'/references/01-investigacao.md"'
+afirma investigador-sem-corte-arbitrario \
+  "01-investigacao.md decide por evidencia, nao por quantidade" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -qi "evidência local" "$f" \
+    && grep -qi "quantidade de arquivos não é critério" "$f"'
 
-afirma investigador-le-direto-abaixo-do-corte \
-  "01-investigacao.md diz o que fazer abaixo do corte" \
-  bash -c 'awk "/ou mais|>= ?3/,0" "'"$S"'/references/01-investigacao.md" | grep -qiE "direto|voc[eê] mesm|sess[aã]o principal"'
-
-afirma qa-e-revisor-sempre \
-  "qa e revisor-testes continuam sem corte por tamanho" \
-  bash -c 'grep -q "agente .qa." "'"$S"'/references/04-qa.md" \
-    && grep -q "revisor-testes" "'"$S"'/references/03-fix.md"'
+afirma agentes-apontam-politica-comum \
+  "referencias dos tres agentes apontam para a politica comum" \
+  bash -c 'for f in 01-investigacao.md 03-fix.md 04-qa.md; do \
+    grep -q "references/06-estado.md" "'"$S"'/references/$f" || exit 1; done'
 
 echo "== sessoes paralelas =="
 
 afirma regras-continuam-16 \
   "as regras inviolaveis agora sao 16" \
-  bash -c '[ "$(awk "/^## Regras inviol/,/^Regra transversal/" "'"$S"'/SKILL.md" | grep -cE "^[0-9]+\. ")" -eq 16 ]'
+  bash -c '[ "$(awk "/^## Invariantes/,/^## Máquina/" "'"$S"'/SKILL.md" | grep -cE "^[0-9]+\. ")" -eq 16 ]'
 
 afirma regra-16-cita-worktree \
-  "a regra 16 cita worktree" \
-  bash -c 'awk "/^## Regras inviol/,/^Regra transversal/" "'"$S"'/SKILL.md" | grep -E "^16\. " | grep -qi worktree'
+  "o nucleo liga ocorrencia, worktree e sessao" \
+  bash -c 'awk "/^## Invariantes/,/^## Máquina/" "'"$S"'/SKILL.md" | grep -qiE "ocorrência.*worktree.*sessão"'
 
 afirma skill-secao-sessoes-paralelas \
-  "SKILL.md tem a secao Sessoes paralelas" \
-  tem "$S/SKILL.md" '^## Sessões paralelas'
+  "01-investigacao.md concentra as instrucoes de worktree" \
+  tem "$S/references/01-investigacao.md" '^## Passo 0.b .*worktree'
 
 afirma skill-tabela-hooks-novos \
-  "a tabela de hooks lista os tres hooks novos" \
-  bash -c 'f="'"$S"'/SKILL.md"; grep -q "uma-ocorrencia-por-arvore" "$f" \
+  "06-estado.md lista os tres eventos operacionais" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; grep -q "uma-ocorrencia-por-arvore" "$f" \
     && grep -q "task-reivindicada" "$f" && grep -q "arvore-limpa-antes-da-suite" "$f"'
 
 afirma skill-rastro-sessao-harness \
-  "a secao O rastro cita sessao e harness como chaves extras" \
-  bash -c 'awk "/^### O rastro/,/^## /" "'"$S"'/SKILL.md" | grep -q "sessao" \
-    && awk "/^### O rastro/,/^## /" "'"$S"'/SKILL.md" | grep -q "harness"'
+  "06-estado.md cita sessao e harness no rastro" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; grep -q "sessao" "$f" && grep -q "harness" "$f"'
 
 afirma schema-ocorrencia-worktree \
   "o kind ocorrencia tem a chave worktree" \
@@ -247,8 +243,9 @@ afirma duplicacao-blocos-normativos \
   bash -c 'python3 - "'"$S"'" <<"PY"
 import pathlib, sys
 raiz = pathlib.Path(sys.argv[1])
-textos = [p.read_text(encoding="utf-8").casefold() for p in raiz.rglob("*.md")]
-for trecho in ("nunca omita uma chave", "substitua os marcadores", "toda transição de estágio atualiza", "diagrama é derivado"):
+arquivos = [raiz / "SKILL.md", *sorted((raiz / "references").glob("*.md")), *sorted((raiz / "assets").glob("*.md"))]
+textos = [p.read_text(encoding="utf-8").casefold() for p in arquivos]
+for trecho in ("nunca omita uma chave", "substitua os marcadores", "toda transição de estágio atualiza", "diagrama é derivado", "escopo travado", "quem implementa não aprova"):
     if sum(t.count(trecho) for t in textos) > 1:
         raise SystemExit(1)
 PY'
