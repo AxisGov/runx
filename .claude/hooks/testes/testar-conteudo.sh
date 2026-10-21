@@ -13,8 +13,10 @@ R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 S="$R/.claude/skills/runx"
 
 ok=0; falhou=0
+FILTRO="${EXPX_TESTE_FILTRO:-}"
 afirma() { # afirma <nome> <descricao> ; le o predicado do stdin (exit 0 = passa)
   local nome="$1" desc="$2"
+  if [ -n "$FILTRO" ] && ! [[ "$nome" =~ $FILTRO ]]; then return; fi
   if "${@:3}"; then
     ok=$((ok+1)); printf '  ok    %-32s %s\n' "$nome" "$desc"
   else
@@ -206,6 +208,113 @@ afirma sem-marcador-vazado \
 afirma decisoes-registradas \
   "DECISOES-DA-SKILL.md registra o ajuste de custo fixo" \
   tem "$S/DECISOES-DA-SKILL.md" '[Cc]usto fixo'
+
+echo "== nucleo minimo e politica operacional =="
+
+afirma nucleo-maximo-8000-bytes \
+  "SKILL.md tem no maximo 8000 bytes" \
+  bash -c '[ "$(wc -c < "'"$S"'/SKILL.md")" -le 8000 ]'
+
+afirma nucleo-cinco-responsabilidades \
+  "o nucleo tem somente gatilho, invariantes, maquina, roteamento e termino" \
+  bash -c 'python3 - "'"$S"'/SKILL.md" <<"PY"
+import pathlib, sys
+titulos = [linha[3:].strip() for linha in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines() if linha.startswith("## ")]
+esperados = ["Gatilho", "Invariantes", "Máquina de estados", "Roteamento por estágio", "Condição de término"]
+raise SystemExit(0 if titulos == esperados else 1)
+PY'
+
+afirma invariante-freios-globais \
+  "o nucleo preserva invariantes e os tres freios operacionais" \
+  bash -c 'f="'"$S"'/SKILL.md"; for p in \
+    "evidência antes de hipótese" "bug não avança" "plano antes do fix" "regressão primeiro" \
+    "escopo travado" "task só fecha verde" "suíte completa em E4" "implementador não aprova" \
+    "QA não corrige" "bloqueios são registrados" "usage_limit_reached" \
+    "uma sessão por ocorrência" "segunda leitura"; do grep -Fqi "$p" "$f" || exit 1; done'
+
+afirma roteamento-lazy-por-estagio \
+  "o roteador carrega uma referencia do estagio e condiciona schema, estado e template" \
+  bash -c 'f="'"$S"'/SKILL.md"; for r in 01-investigacao 02-plano 03-fix 04-qa 05-relatorio; do \
+    grep -q "$r.md" "$f" || exit 1; done; grep -qi "somente.*estágio atual\|apenas.*estágio atual" "$f" \
+    && grep -qi "00-schema.*quando\|quando.*00-schema" "$f" \
+    && grep -qi "06-estado.*quando\|quando.*06-estado" "$f" \
+    && grep -qi "template.*somente\|template.*apenas" "$f"'
+
+echo "== duplicacao e agentes opcionais =="
+
+afirma duplicacao-blocos-normativos \
+  "blocos normativos catalogados aparecem em uma unica fonte" \
+  bash -c 'python3 - "'"$S"'" <<"PY"
+import pathlib, sys
+raiz = pathlib.Path(sys.argv[1])
+textos = [p.read_text(encoding="utf-8").casefold() for p in raiz.rglob("*.md")]
+for trecho in ("nunca omita uma chave", "substitua os marcadores", "toda transição de estágio atualiza", "diagrama é derivado"):
+    if sum(t.count(trecho) for t in textos) > 1:
+        raise SystemExit(1)
+PY'
+
+afirma agente-investigador-por-evidencia \
+  "investigador abre so quando a causa nao esta demonstrada por evidencia local" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    grep -qiE "evidência local.*causa|causa.*evidência local" "$f" \
+    && ! grep -qE "3 \(tr[eê]s\)|tr[eê]s ou mais|>= ?3|3 ou mais" "$f"'
+
+afirma agente-revisor-por-digest \
+  "revisor roda uma vez no vermelho estavel e repete so com digest novo" \
+  bash -c 'f="'"$S"'/references/03-fix.md"; grep -qi "vermelh.*estabiliz" "$f" \
+    && grep -qi "uma vez" "$f" && grep -qi "digest" "$f"'
+
+afirma agente-qa-por-lote-digest \
+  "qa roda uma vez por lote E4 e repete somente apos correcao" \
+  bash -c 'f="'"$S"'/references/04-qa.md"; grep -qi "uma vez.*lote\|lote.*uma vez" "$f" \
+    && grep -qi "digest" "$f" && grep -qi "depois de.*correção\|após.*correção" "$f"'
+
+afirma agente-exclusao-mutua \
+  "investigador, revisor e qa nunca ficam ativos simultaneamente" \
+  bash -c 'grep -qiE "mutuamente exclusivos|nunca.*investigador.*revisor.*qa" "'"$S"'/references/06-estado.md"'
+
+afirma agente-sem-segunda-leitura \
+  "digest inalterado suprime segunda leitura" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; grep -qi "digest" "$f" \
+    && grep -qiE "segunda leitura.*suprim|sem mudança.*não.*revisor|inalterado.*não" "$f"'
+
+echo "== classes de capacidade e marcos =="
+
+afirma modelo-classes-canonicas \
+  "politica declara as tres classes independentes de fornecedor" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; for c in mecanico_triagem raciocinio_normal profundo_excepcional; do \
+    grep -q "$c" "$f" || exit 1; done'
+
+afirma modelo-adaptadores-runtime \
+  "Claude e Codex mapeiam classes sem model inherit" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; grep -q "Haiku" "$f" && grep -q "Sonnet" "$f" \
+    && grep -q "Opus" "$f" && grep -q "Codex" "$f" && grep -q "low" "$f" && grep -q "medium" "$f" \
+    && grep -q "high" "$f" && ! grep -q "model: inherit" "'"$R"'/.claude/agents/"*.md'
+
+afirma modelo-profundo-com-justificativa \
+  "classe profunda exige justificativa registrada" \
+  bash -c 'grep -qiE "profundo_excepcional.*justific|justific.*profundo_excepcional" "'"$S"'/references/06-estado.md"'
+
+afirma modelo-agentes-economicos \
+  "agentes read-only fixam haiku ou sonnet conforme o papel" \
+  bash -c 'grep -q "^model: sonnet$" "'"$R"'/.claude/agents/investigador.md" \
+    && grep -q "^model: haiku$" "'"$R"'/.claude/agents/revisor-testes.md" \
+    && grep -q "^model: sonnet$" "'"$R"'/.claude/agents/qa.md"'
+
+afirma uso-limite-interrompe-agentes \
+  "usage_limit_reached interrompe execucao e qualquer tentativa automatica" \
+  bash -c 'grep -q "usage_limit_reached" "'"$S"'/SKILL.md" \
+    && grep -qiE "tentativa automática|tentativa automatica" "'"$S"'/references/06-estado.md"'
+
+afirma marco-quatro-classes \
+  "estado, orquestrador e handoff mudam so em quatro classes de marco" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; grep -qi "quatro.*marco\|4.*marco" "$f" \
+    && for p in "transição de estágio" bloqueio decisão término; do grep -Fqi "$p" "$f" || exit 1; done'
+
+afirma marco-evento-mecanico-deterministico \
+  "evento mecanico vai ao JSONL por script sem chamada de LLM" \
+  bash -c 'f="'"$S"'/references/06-estado.md"; grep -qi "evento mecânico\|eventos mecânicos" "$f" \
+    && grep -qi "JSONL" "$f" && grep -qi "sem chamada.*LLM" "$f"'
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
