@@ -124,6 +124,12 @@ afirma investigador-sem-corte-arbitrario \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -qi "evidência local" "$f" \
     && grep -qi "quantidade de arquivos não é critério" "$f"'
 
+afirma e1-caminhos-deterministicos \
+  "E1 define raiz Git, OC-ID e slug normalizado de no maximo seis palavras" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -qi "raiz Git" "$f" \
+    && grep -q "OC-<AAAA>-<NNNN>" "$f" && grep -qi "slug" "$f" && grep -qi "seis" "$f" \
+    && grep -qiE "minúscul|minuscul" "$f" && grep -qi "hífen\|hifen" "$f"'
+
 afirma agentes-apontam-politica-comum \
   "referencias dos tres agentes apontam para a politica comum" \
   bash -c 'for f in 01-investigacao.md 03-fix.md 04-qa.md; do \

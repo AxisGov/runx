@@ -32,10 +32,23 @@ python3 .claude/runx-hooks/comum/rastro.py --evento agente_concluido --agente in
 
 **Sem o agente disponível, execute você mesmo tudo o que segue** — o método é idêntico, muda só quem carrega a leitura.
 
+## Caminhos determinísticos
+
+Ancore `docs/manutencao/` e `docs/relatorios/` na raiz Git mais próxima do
+diretório atual: suba até o diretório que contém `.git` (arquivo ou pasta). Se
+nenhum ancestral tiver `.git`, use o diretório de trabalho inicial. Nunca crie
+essas árvores dentro de um pacote de monorepo quando a raiz Git já tiver
+`docs/`.
+
+O identificador segue `OC-<AAAA>-<NNNN>`. O `<slug>` deriva do título em
+minúsculas e sem acentos; espaços e separadores viram hífen; remova caracteres
+fora de `a-z`, `0-9` e `-`, colapse hífens e limite o slug às primeiras seis
+palavras. Use o mesmo slug em manutenção, branch, worktree e relatório.
+
 ## Pré-requisitos verificáveis
 
 - A ocorrência chegou (texto colado, identificador de ticket ou caminho de arquivo).
-- O `<OC-ID>` e o `<slug>` estão definidos pelas regras do SKILL.md.
+- O `<OC-ID>` e o `<slug>` estão definidos pelas regras acima.
 
 Se `docs/manutencao/<OC-ID>-<slug>/base/` já existe completa e `01-CAUSA-RAIZ.md` também existe, o E1 já passou: anuncie o estágio real detectado pela máquina de estados e execute-o em vez deste.
 

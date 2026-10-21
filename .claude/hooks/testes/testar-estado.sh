@@ -75,6 +75,32 @@ afirma() {
 echo "== helper de marcos e recuperação =="
 afirma helper-existe "estado.py existe" test -f "$HELPER"
 
+# E1 ainda não tem ORQUESTRADOR.md: o marco E1→E2 precisa nascer dos
+# artefatos da ocorrência, sem antecipar a criação do mapa do plano.
+N="$W/docs/manutencao/OC-2026-0043-bootstrap"
+mkdir -p "$N"
+cat > "$N/00-OCORRENCIA.md" <<'EOF'
+---
+expx_schema: 1
+expx_tool: runx
+kind: ocorrencia
+trabalho_id: OC-2026-0043
+titulo: Bootstrap sem orquestrador
+---
+EOF
+bootstrap_saida=$(cd "$W" && python3 "$HELPER" marco --ocorrencia "$N" \
+  --tipo transicao --id E1-E2 --resultado e2 --agora 2026-10-21T11:59:00Z 2>&1); bootstrap=$?
+afirma bootstrap-e1-e2 "E1→E2 funciona antes de existir ORQUESTRADOR.md" \
+  bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && [ ! -e "$3/ORQUESTRADOR.md" ] && \
+    python3 -c "import json,sys; e=json.load(open(sys.argv[1])); assert e[\"trabalho\"]==\"OC-2026-0043\" and e[\"fase\"]==\"e2\"" "$4/.expx/estado.json"' \
+  _ "$bootstrap" "$bootstrap_saida" "$N" "$W"
+# Restaura a ocorrência principal para os casos seguintes.
+python3 - "$W/.expx/estado.json" <<'PY'
+import json, sys
+p=sys.argv[1]; e=json.load(open(p)); e.update(trabalho="OC-2026-0042", fase="e2");
+open(p,"w").write(json.dumps(e)+"\n")
+PY
+
 # Evento mecânico usa o rastro existente e não pode provocar churn de estado.
 antes_estado=$(sha256sum "$W/.expx/estado.json" | cut -d' ' -f1)
 antes_orq=$(sha256sum "$O/ORQUESTRADOR.md" | cut -d' ' -f1)
@@ -135,6 +161,22 @@ fi
 afirma reconstruir-interrupcao "reconstrução recupera estágio e contadores após queda" \
   bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && python3 -c "import json,sys; e=json.load(open(sys.argv[1])); assert e[\"fase\"]==\"e3\" and e[\"tasks_concluidas\"]==2 and e[\"tasks_total\"]==2 and e[\"task\"] is None" "$3/.expx/estado.json"' \
   _ "$recon" "$recon_saida" "$W"
+
+# SessionStart usa o trabalho do cache apenas para localizar a fonte versionada
+# e então a reconstrói; não depende de uma chamada do modelo.
+sed -i 's/"tasks_concluidas": 2/"tasks_concluidas": 0/' "$W/.expx/estado.json"
+sessao_saida=$(printf '{"hook_event_name":"SessionStart","cwd":"%s"}' "$W" | \
+  (cd "$W" && python3 "$HELPER" session-start) 2>&1); sessao=$?
+afirma session-start-reconstroi "SessionStart recupera cache atrasado sem stdout" \
+  bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && python3 -c "import json,sys; assert json.load(open(sys.argv[1]))[\"tasks_concluidas\"]==2" "$3/.expx/estado.json"' \
+  _ "$sessao" "$sessao_saida" "$W"
+
+# O encerramento é fato versionado e precisa sobreviver a qualquer reconstrução.
+sed -i 's/^status: em_andamento$/status: concluido/; s/^concluido_em: null$/concluido_em: 2026-10-21/' "$O/ORQUESTRADOR.md"
+(cd "$W" && python3 "$HELPER" reconstruir --ocorrencia "$O" --agora 2026-10-21T12:03:00Z >/dev/null 2>&1); encerrado=$?
+afirma reconstruir-termino "reconstrução conserva trabalho, fase e task nulos após término" \
+  bash -c '[ "$1" -eq 0 ] && python3 -c "import json,sys; e=json.load(open(sys.argv[1])); assert e[\"trabalho\"] is None and e[\"fase\"] is None and e[\"task\"] is None" "$2/.expx/estado.json"' \
+  _ "$encerrado" "$W"
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]

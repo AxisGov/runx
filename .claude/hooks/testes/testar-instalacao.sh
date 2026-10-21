@@ -52,6 +52,15 @@ afirma assinatura-politica-nova \
   bash -c 'grep -rq mecanico_triagem "$1/references" && ! grep -rq "model: inherit" "$2"' \
     _ "$D/.claude/skills/runx" "$D/.claude/agents"
 
+afirma session-start-recuperacao \
+  "instalação registra estado.py session-start no Claude Code" \
+  bash -c 'python3 - "$1/.claude/settings.json" <<"PY"
+import json, sys
+d=json.load(open(sys.argv[1]))
+grupos=d.get("hooks",{}).get("SessionStart",[])
+assert any("estado.py\" session-start" in h.get("command", "") for g in grupos for h in g.get("hooks", []))
+PY' _ "$D"
+
 if [ "$codigo" -ne 0 ]; then printf '%s\n' "$saida" | sed 's/^/          /' | head -20; fi
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]

@@ -54,6 +54,37 @@ function localizarDespachante(cwd) {
   return null;
 }
 
+function localizarEstado(cwd) {
+  const candidatos = [
+    path.join(cwd || ".", ".claude", "runx-hooks", "comum", "estado.py"),
+    path.join(os.homedir(), ".claude", "runx-hooks", "comum", "estado.py"),
+    path.join(cwd || ".", ".claude", "hooks", "comum", "estado.py"),
+  ];
+  for (const candidato of candidatos) {
+    try {
+      if (fs.existsSync(candidato)) return candidato;
+    } catch (e) {
+      // tenta o próximo; recuperação é fail-open
+    }
+  }
+  return null;
+}
+
+function recuperarEstado(cwd, input) {
+  const helper = localizarEstado(cwd);
+  if (!helper) return;
+  try {
+    spawnSync("python3", [helper, "session-start"], {
+      cwd,
+      input: JSON.stringify({ hook_event_name: "SessionStart", cwd, session_id: input.sessionID }),
+      encoding: "utf8",
+      timeout: 15000,
+    });
+  } catch (e) {
+    // estado e handoff são cache: falha de recuperação nunca bloqueia a sessão
+  }
+}
+
 function lerHooksJson(despachantePath) {
   try {
     const p = path.join(path.dirname(despachantePath), "..", "hooks.json");
@@ -191,6 +222,7 @@ async function RunxPonte(ctx) {
     },
 
     "shell.env": async (input, output) => {
+      recuperarEstado(cwd, input);
       output.env = output.env || {};
       output.env.EXPX_HARNESS = harness;
       output.env.EXPX_SESSAO = harness + "@" + (input.sessionID || "sem-id");

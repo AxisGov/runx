@@ -263,6 +263,42 @@ afirma shell-env-mimocode \
   "ponte carregada de .mimocode/ exporta EXPX_HARNESS=mimocode" \
   confere "$W/resultado.json" 'output/env/EXPX_HARNESS=mimocode'
 
+echo "== recuperação na abertura OpenCode/MimoCode =="
+REC="$W/proj-recuperacao"
+OC="$REC/docs/manutencao/OC-2026-0900-cache"
+mkdir -p "$REC/.opencode/plugins" "$REC/.claude/runx-hooks" "$REC/.expx" "$OC/sprint-01"
+touch "$REC/.git"
+cp "$PONTE" "$REC/.opencode/plugins/runx-ponte.js"
+cp -R "$H/comum" "$REC/.claude/runx-hooks/"
+cat > "$OC/ORQUESTRADOR.md" <<'EOF'
+---
+trabalho_id: OC-2026-0900
+titulo: Cache
+estagio: e3
+status: em_andamento
+concluido_em: null
+---
+EOF
+cat > "$OC/sprint-01/tasks.md" <<'EOF'
+---
+tasks:
+  - id: T-01.01
+    status: concluida
+---
+EOF
+printf '%s\n' '---' 'bloqueios: []' '---' > "$OC/BLOQUEIOS.md"
+printf '%s\n' '{"expx_estado":1,"trabalho":"OC-2026-0900","tasks_concluidas":0}' > "$REC/.expx/estado.json"
+python3 -c "
+import json, sys
+pedido = {'pontePath': sys.argv[1], 'cwd': sys.argv[2], 'hook': 'shell.env',
+          'input': {'cwd': sys.argv[2], 'sessionID': 'rec'}, 'output': {'env': {}}}
+json.dump(pedido, open(sys.argv[3], 'w'))
+" "$REC/.opencode/plugins/runx-ponte.js" "$REC" "$W/pedido.json"
+node "$DRIVER" "$W/pedido.json" "$W/resultado.json" 2>"$W/stderr-node.txt"
+afirma shell-env-recupera-estado \
+  "shell.env reconstrói cache atrasado usando o helper instalado" \
+  bash -c 'python3 -c "import json,sys; assert json.load(open(sys.argv[1]))[\"tasks_concluidas\"]==1" "$1/.expx/estado.json"' _ "$REC"
+
 echo "== robustez =="
 
 python3 -c "

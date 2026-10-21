@@ -180,6 +180,21 @@ def registra(evento, matcher, nomes):
 for (evento, matcher), nomes in GRUPOS.items():
     registra(evento, matcher, nomes)
 
+# Recuperação determinística do cache no começo/retomada da sessão. Não passa
+# pelo despachante porque não é um evento de ferramenta.
+entradas = conf["hooks"].setdefault("SessionStart", [])
+alvo = next((e for e in entradas if isinstance(e, dict) and e.get("matcher") == "startup|resume|compact"), None)
+if alvo is None:
+    alvo = {"matcher": "startup|resume|compact", "hooks": []}
+    entradas.append(alvo)
+alvo.setdefault("hooks", [])
+alvo["hooks"] = [h for h in alvo["hooks"]
+                 if "estado.py\" session-start" not in str(h.get("command", ""))]
+alvo["hooks"].append({"type": "command",
+                      "command": 'python3 "%s" session-start' % os.path.join(raiz, "comum", "estado.py"),
+                      "timeout": 15})
+novos += 1
+
 if os.path.exists(settings):
     backup = settings + ".runx-backup"
     if not os.path.exists(backup):
