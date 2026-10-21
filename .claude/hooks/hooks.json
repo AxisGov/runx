@@ -1,6 +1,19 @@
 {
   "description": "runx — hooks de seguranca, de rastro e de metodo. Seguranca nasce em bloqueio; metodo nasce em aviso e e promovido em .expx/hooks.json. Os hooks rodam por um despachante unico: cada python3 custa ~30 ms de partida, e cinco processos estourariam o orcamento de 200 ms por chamada de ferramenta.",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/comum/estado.py\" session-start",
+            "timeout": 15,
+            "statusMessage": "recuperando estado runx"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Write|Edit",

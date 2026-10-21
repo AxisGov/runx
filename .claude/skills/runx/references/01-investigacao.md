@@ -2,22 +2,15 @@
 
 Você está no E1. Este estágio tem duas metades, nesta ordem: **E1.a base de conhecimento**, depois **E1.b causa raiz ou análise de impacto**. Você não planeja nada e não escreve nenhum código de implementação neste estágio.
 
-## Delegue ao agente `investigador`, quando ele existir
+## Delegue ao agente `investigador` somente por falta de prova
 
-A investigação lê muito — código, chamadores, migrações, testes existentes. Em contexto próprio, essa leitura não consome o contexto que depois vai implementar.
+Primeiro reúna a evidência local disponível: relato, busca pelos termos, código, testes e
+histórico relevante. Só delegue quando a causa ainda não estiver demonstrada por evidência local
+depois dessa leitura. Quantidade de arquivos não é critério.
 
-**Delegue quando houver o que carregar.** O agente tem custo de partida: ele relê do zero o que a sessão principal já tem em contexto. Numa ocorrência de um ou dois arquivos, esse custo é maior que a leitura que ele evita.
-
-O corte é mecânico, e sai de um dado que o próprio E1 já produz — **quantos arquivos candidatos o grep pelos termos do relato devolveu** (a busca descrita em "Por onde começar a busca", logo abaixo):
-
-| Arquivos candidatos | O que fazer |
-|---|---|
-| **3 ou mais** | delegue ao agente `investigador`, quando ele existir |
-| 1 ou 2 | **leia direto**, você mesmo, na sessão principal — o método é idêntico |
-
-Faça a busca primeiro, conte, e só então decida. Decidir antes de buscar é palpite, e é justamente o que este corte existe para evitar. Na dúvida entre os dois lados — arquivos grandes, cadeia de chamadores que já se mostrou longa —, delegue: o custo de delegar demais é uma leitura repetida, e o de delegar de menos é o contexto da implementação gasto antes de implementar.
-
-Este corte vale **só para o `investigador`**. Os outros dois agentes não têm corte por tamanho: o `qa` é a única verificação independente do método, e o `revisor-testes` responde uma pergunta só e é barato mesmo em ocorrência mínima.
+Registre o digest das entradas e siga a política de exclusão mútua, repetição e classe de
+capacidade de `references/06-estado.md`. Sem agente disponível, continue na sessão
+principal com o mesmo método.
 
 **Ao delegar, passe:** o caminho da pasta da ocorrência, o `00-OCORRENCIA.md` já preenchido (Passo 0 é sempre seu, não dele), o tipo classificado e os arquivos candidatos que o grep devolveu. Ele devolve o conteúdo dos arquivos da `base/`, do `00-INDICE.md`, do `00-LACUNAS.md` e do `01-CAUSA-RAIZ.md` — prontos, mas **não gravados**: ele não tem ferramenta de escrita. Quem grava é você, com o frontmatter de `references/00-schema.md`.
 
@@ -39,10 +32,23 @@ python3 .claude/runx-hooks/comum/rastro.py --evento agente_concluido --agente in
 
 **Sem o agente disponível, execute você mesmo tudo o que segue** — o método é idêntico, muda só quem carrega a leitura.
 
+## Caminhos determinísticos
+
+Ancore `docs/manutencao/` e `docs/relatorios/` na raiz Git mais próxima do
+diretório atual: suba até o diretório que contém `.git` (arquivo ou pasta). Se
+nenhum ancestral tiver `.git`, use o diretório de trabalho inicial. Nunca crie
+essas árvores dentro de um pacote de monorepo quando a raiz Git já tiver
+`docs/`.
+
+O identificador segue `OC-<AAAA>-<NNNN>`. O `<slug>` deriva do título em
+minúsculas e sem acentos; espaços e separadores viram hífen; remova caracteres
+fora de `a-z`, `0-9` e `-`, colapse hífens e limite o slug às primeiras seis
+palavras. Use o mesmo slug em manutenção, branch, worktree e relatório.
+
 ## Pré-requisitos verificáveis
 
 - A ocorrência chegou (texto colado, identificador de ticket ou caminho de arquivo).
-- O `<OC-ID>` e o `<slug>` estão definidos pelas regras do SKILL.md.
+- O `<OC-ID>` e o `<slug>` estão definidos pelas regras acima.
 
 Se `docs/manutencao/<OC-ID>-<slug>/base/` já existe completa e `01-CAUSA-RAIZ.md` também existe, o E1 já passou: anuncie o estágio real detectado pela máquina de estados e execute-o em vez deste.
 
@@ -65,7 +71,10 @@ docs/manutencao/<OC-ID>-<slug>/
 
 Preencha `00-OCORRENCIA.md` pelo contrato de entrada do SKILL.md. O relato do cliente é **copiado literalmente**, sem reescrever, sem corrigir, sem resumir. Se não houver identificador, gere `OC-<AAAA>-<NNNN>` sequencial olhando `docs/manutencao/` e `docs/relatorios/` — obtenha o ano com `date +%Y` do sistema, nunca de memória.
 
-**Classifique o tipo** pela lista do SKILL.md. Se ambíguo, escolha o mais provável, registre a escolha em uma linha no próprio `00-OCORRENCIA.md` e siga sem esperar confirmação.
+**Classifique o tipo** como `bug`, `melhoria-ui`, `melhoria-ux`, `novo-relatorio`,
+`regra-de-calculo`, `campo-novo` ou `outro`. Se ambíguo, escolha o mais provável,
+registre a escolha em uma linha no próprio `00-OCORRENCIA.md` e siga sem esperar
+confirmação.
 
 **Portão único de pergunta deste estágio:** se `tipo: bug` e não houver passos de reprodução nem evidência suficiente para investigar (nenhum log, nenhuma mensagem de erro, nenhum dado concreto), PARE e pergunte isso — e apenas isso. Investigar bug sem reprodução é chute. Para os demais tipos, siga com o que houver.
 
@@ -294,4 +303,4 @@ Continue investigando até atender. Se a prova de um bug não aparece, encerre c
 
 Anuncie: "E1 concluído. Base em `docs/manutencao/<OC-ID>-<slug>/base/` (N arquivos, M lacunas). Causa raiz COMPROVADA / impacto mapeado. Próximo estágio: E2 PLANO." Em seguida, se a sessão continuar, entre no E2 lendo `references/02-plano.md`.
 
-Ao fazer a transição, grave `fase: e2` em `.expx/estado.json` (`references/06-estado.md`) — toda transição de estágio atualiza a barra.
+Ao fazer a transição, registre o marco E1→E2 pelo contrato de `references/06-estado.md`.

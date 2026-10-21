@@ -54,7 +54,7 @@ tasks:
 ---
 
 > Frontmatter obrigatorio (expx-schema v1). Formato completo em `references/00-schema.md`.
-> Substitua TODOS os marcadores; NUNCA omita uma chave — ausente e `null`, lista vazia e `[]`.
+> Preencha pelo contrato e pela instrução comum de templates em `references/00-schema.md`.
 > Sem acento em chave nem em valor de enum. `atualizado_em` e reescrito a cada gravacao.
 >
 > **Um unico bloco YAML.** Os leitores de frontmatter param no primeiro `---` de fechamento:
@@ -85,7 +85,7 @@ tasks:
 
 ## Fora de escopo
 
-> Escopo travado (regra 8). O que foi percebido e NÃO será tocado nesta ocorrência.
+> Fora de escopo: o que foi percebido e NÃO será tocado nesta ocorrência (invariante 5).
 > Melhoria avulsa vira sugestão de nova ocorrência no relatório técnico, nunca implementação.
 
 - {{o que não será tocado}} — {{por quê}}

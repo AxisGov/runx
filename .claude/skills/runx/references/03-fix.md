@@ -52,7 +52,7 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
    python3 .claude/runx-hooks/comum/rastro.py --evento task_iniciada --fase e3 --task <T-NN.MM>
    ```
 2. **Escreva o teste. Rode. Ele TEM que falhar.** Nenhuma linha de implementação antes de ver o vermelho. Na primeira task da primeira fase, este é o `teste_regressao`: o teste que reproduz o problema.
-3. **Implemente o mínimo para o teste passar.** Mínimo é literal: só o que faz o vermelho virar verde. Nada de refactor de brinde, nada de "já que estou aqui" — escopo travado é a regra 8 do SKILL.md.
+3. **Implemente o mínimo para o teste passar.** Mínimo é literal: só o que faz o vermelho virar verde. Nada de refactor de brinde, nada de "já que estou aqui" — aplique o invariante 5 do `SKILL.md`.
 4. **Escreva os dois testes da task** — `teste_integracao` e `teste_funcional` — exatamente como a task os descreve, e faça-os passar.
 5. **Rode o subconjunto afetado pela task.** Os testes que ela criou ou alterou, mais os que cobrem os arquivos em `arquivos.cria` e `arquivos.altera` — não a suíte inteira. Com o subconjunto verde, a task grava `suite: parcial`.
 
@@ -61,7 +61,11 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
    Um ponto que não muda: **task com teste vermelho não fecha**, seja o subconjunto ou a suíte inteira. `parcial` significa "o que era desta task passou", nunca "passou mais ou menos".
 6. Antes de aceitar o verde, responda: **este teste falharia com uma implementação errada?** Se a resposta é não, o teste não discrimina — reescreva-o e volte ao passo 2.
 
-   **Se o agente `revisor-testes` estiver disponível, é ele quem responde essa pergunta** — você acabou de escrever o teste e é o pior juiz da própria armadilha. Passe a pasta da ocorrência e a task. Ele lê, roda o que precisar e devolve a tabela de achados mais a linha `TESTES: DISCRIMINAM` / `TESTES: NÃO DISCRIMINAM`. Ele não corrige: não tem ferramenta de escrita. Achado ALTA dele = teste reescrito por você e volta ao passo 2.
+   Quando o vermelho do teste de regressão estiver estabilizado e antes do fix final,
+   chame o `revisor-testes` uma vez. Registre o digest do teste; só repita se esse digest
+   mudar. Ele devolve a tabela de achados e `TESTES: DISCRIMINAM` ou
+   `TESTES: NÃO DISCRIMINAM`, sem corrigir. Siga a política comum de
+   `references/06-estado.md`.
 
    Na primeira task da primeira fase, peça a ele a checagem que mais falha em silêncio: **o `teste_regressao` realmente falhava antes do fix?** Ele confirma contra o código anterior (`git worktree`, `git show`) e devolve `REGRESSÃO PROVA` ou `REGRESSÃO NÃO PROVA`. `NÃO PROVA` cai na regra abaixo — para a execução e volta ao E1.
 
@@ -86,7 +90,7 @@ O `fases.md` da sprint carrega um bloco Mermaid com o grafo de tasks, gerado no 
 
 Isso vale nas duas transições da task: ao marcá-la `em_andamento` no passo 1, e ao marcá-la `concluida` (ou `bloqueada`) no passo 8. A gravação vai junto da gravação do `tasks.md` que você já está fazendo — é a mesma passada no disco, não uma segunda.
 
-**Falha na atualização é registrada e ignorada.** Se o bloco não estiver lá, se o nó não for encontrado, se o arquivo tiver outra forma: a task continua concluída, a suíte continua verde e o estágio continua avançando. O diagrama é derivado e **nunca bloqueia o trabalho**:
+**Falha na atualização é registrada e ignorada.** Se o bloco não estiver lá, se o nó não for encontrado, se o arquivo tiver outra forma: a task continua concluída, a suíte continua verde e o estágio continua avançando. A regra normativa do diagrama fica em `references/07-diagrama.md`:
 
 ```
 python3 .claude/runx-hooks/comum/rastro.py --evento diagrama_nao_atualizado --fase e3 \
@@ -146,4 +150,4 @@ Este relatório é para o usuário na conversa; ele **não** substitui os relat�
 
 Anuncie: "E3 concluído. N tasks concluídas, M bloqueadas. Próximo estágio: E4 QA." Siga para o E4 lendo `references/04-qa.md`.
 
-Ao fazer a transição, grave `fase: e4` em `.expx/estado.json` — toda transição de estágio atualiza a barra.
+Ao fazer a transição, registre o marco E3→E4 pelo contrato de `references/06-estado.md`.

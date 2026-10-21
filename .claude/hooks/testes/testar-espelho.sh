@@ -30,5 +30,26 @@ echo "== espelhamento .claude <-> .opencode =="
 par skills   ".claude/skills/runx"  ".opencode/skills/runx"
 par commands ".claude/commands"     ".opencode/command"
 
+echo "== sincronizador deterministico =="
+SYNC="$R/sincronizar-espelho.sh"
+if [ ! -x "$SYNC" ]; then
+  falhou=$((falhou+1)); printf '  FALHA %-22s %s ausente ou nao executavel\n' "sincronizador-existe" "sincronizar-espelho.sh"
+else
+  ok=$((ok+1)); printf '  ok    %-22s sincronizar-espelho.sh executavel\n' "sincronizador-existe"
+  T="$(mktemp -d)"
+  trap 'rm -rf "$T"' EXIT
+  mkdir -p "$T/.claude/skills" "$T/.opencode/skills"
+  cp -R "$R/.claude/skills/runx" "$T/.claude/skills/runx"
+  cp -R "$R/.opencode/skills/runx" "$T/.opencode/skills/runx"
+  cp "$SYNC" "$T/sincronizar-espelho.sh"
+  printf '\nCORRUPCAO-DE-TESTE\n' >> "$T/.opencode/skills/runx/SKILL.md"
+  if (cd "$T" && bash ./sincronizar-espelho.sh >/dev/null 2>&1) \
+      && diff -rq "$T/.claude/skills/runx" "$T/.opencode/skills/runx" >/dev/null; then
+    ok=$((ok+1)); printf '  ok    %-22s adulteracao temporaria reparada\n' "sincronizador-repara"
+  else
+    falhou=$((falhou+1)); printf '  FALHA %-22s nao reparou a copia temporaria\n' "sincronizador-repara"
+  fi
+fi
+
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
