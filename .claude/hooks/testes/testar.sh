@@ -565,5 +565,15 @@ else
 fi
 
 echo
+echo "== suites de conteudo, espelho e instalacao =="
+for suite in testar-conteudo.sh testar-espelho.sh testar-instalacao.sh; do
+  if bash "$(dirname "${BASH_SOURCE[0]}")/$suite"; then
+    ok=$((ok+1)); printf '  ok   %-46s exit=0\n' "$suite"
+  else
+    falhou=$((falhou+1)); printf '  FALHA %-45s exit!=0\n' "$suite"
+  fi
+done
+
+echo
 echo "  $ok ok, $falhou falhas"
 [ "$falhou" -eq 0 ]

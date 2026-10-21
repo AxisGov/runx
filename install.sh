@@ -28,7 +28,9 @@ CMD_SRC="$SRC/.claude/commands"
 HOOK_SRC="$SRC/.claude/hooks"
 AGENT_SRC="$SRC/.claude/agents"
 PONTE_SRC="$SRC/.claude/hooks/ponte/runx-ponte.js"
-OC_SKILL_SRC="$SRC/.opencode/skills/runx"
+# A árvore Claude é a fonte canônica. O espelho OpenCode é artefato verificável,
+# nunca uma segunda fonte que possa restaurar bytes históricos.
+OC_SKILL_SRC="$SKILL_SRC"
 OC_CMD_SRC="$SRC/.opencode/command"
 
 GLOBAL=0; DO_CLAUDE=0; DO_OPENCODE=0; DO_MIMOCODE=0; FORCE=0; DRY=0; NO_HOOKS=0

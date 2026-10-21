@@ -15,7 +15,7 @@ sprints: [sprint-01]
 caminho_critico: [T-01.01]
 ---
 
-> Frontmatter obrigatorio (expx-schema v1). Formato completo em `references/00-schema.md`. Substitua os marcadores; NUNCA omita uma chave — ausente e `null`, lista vazia e `[]`. Sem acento em chave nem em valor de enum. `atualizado_em` e reescrito a cada gravacao.
+> Preencha pelo contrato e pela instrução comum de templates em `references/00-schema.md`.
 
 # Orquestrador — {{OC-ID}} {{título da ocorrência}}
 
@@ -67,7 +67,7 @@ caminho_critico: [T-01.01]
 1. Não pergunte nada; não peça autorização para nada.
 2. O teste vem antes do código, sempre. O teste de regressão tem que falhar antes do fix — se ele passar antes, pare e volte ao E1.
 3. Task só é `concluida` com teste de integração E funcional passando, suíte inteira verde e `criterio_aceite` verificado. Não existe "concluído com ressalva".
-4. Escopo travado: não toque em arquivo fora de `01-CAUSA-RAIZ.md` e de `tasks.md`. Nada de refactor de brinde.
+4. Aplique o limite de escopo do invariante 5 do `SKILL.md`.
 5. Dúvida nova ou pré-requisito faltando: registrar em `BLOQUEIOS.md` (`B-NN | task | bloqueio | o que destravaria`), marcar a task `bloqueada`, pular para a próxima paralelizável. Nunca parar e esperar.
 6. Só rode em paralelo o que o plano declarou paralelizável; a execução nunca decide paralelismo. Entre sprints, sempre sequencial.
 7. Atualize `status` em `tasks.md` a cada transição; ao concluir, acrescente data e resultado da suíte.

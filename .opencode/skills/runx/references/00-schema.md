@@ -35,6 +35,12 @@ Valem para todo arquivo que leva frontmatter:
 8. Campos de texto no YAML são de UMA linha. Nada de duplicar prosa longa no YAML.
 9. `atualizado_em` é reescrito a cada gravação do arquivo.
 
+## Instrução comum dos templates
+
+Substitua os marcadores pelos valores reais segundo o kind desta referência. Preserve
+todas as chaves e seções do template; use `null`, `[]` ou `NÃO DETERMINADO` quando o
+contrato assim determinar. Os templates apontam para esta regra em vez de copiá-la.
+
 ## Enums
 
 | Enum | Valores |
@@ -395,7 +401,7 @@ Regras duras deste kind:
   `atualizado_em`), que já estão no topo e não se repetem — é exatamente essa repetição
   que o formato condensado elimina.
 - `sprint.fora_de_escopo` é uma lista de strings de uma linha (`[]` quando vazia). Ela
-  existe porque o escopo travado é a regra 8 e precisa continuar declarado.
+  existe porque o limite de escopo do invariante 5 precisa continuar declarado.
 - **Quando usar:** uma sprint e uma fase. Com mais de uma sprint, ou mais de uma fase, o
   E2 grava os três arquivos separados (`sprint.md`, `fases.md`, `tasks.md`) como sempre.
 - O formato de três arquivos **continua válido e não é descontinuado**. Planos já escritos
