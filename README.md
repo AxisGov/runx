@@ -3,22 +3,22 @@
 <img alt="runx — a metade Run do método Expx: cinco estágios, da investigação ao relatório" src=".github/assets/anim/hero.svg" width="100%">
 
 <p>
-  <img alt="harness: Claude Code" src="https://raw.githubusercontent.com/bittencourtthulio/runx/main/.github/assets/badge-claude.svg">
-  <img alt="harness: OpenCode" src="https://raw.githubusercontent.com/bittencourtthulio/runx/main/.github/assets/badge-opencode.svg">
-  <img alt="TDD obrigatorio" src="https://raw.githubusercontent.com/bittencourtthulio/runx/main/.github/assets/badge-tdd.svg">
-  <img alt="schema expx v1" src="https://raw.githubusercontent.com/bittencourtthulio/runx/main/.github/assets/badge-schema.svg">
-  <img alt="docs pt-BR" src="https://raw.githubusercontent.com/bittencourtthulio/runx/main/.github/assets/badge-lang.svg">
-  <img alt="licenca MIT" src="https://raw.githubusercontent.com/bittencourtthulio/runx/main/.github/assets/badge-license.svg">
+  <img alt="harness: Claude Code" src="https://raw.githubusercontent.com/AxisGov/runx/main/.github/assets/badge-claude.svg">
+  <img alt="harness: OpenCode" src="https://raw.githubusercontent.com/AxisGov/runx/main/.github/assets/badge-opencode.svg">
+  <img alt="TDD obrigatorio" src="https://raw.githubusercontent.com/AxisGov/runx/main/.github/assets/badge-tdd.svg">
+  <img alt="schema expx v1" src="https://raw.githubusercontent.com/AxisGov/runx/main/.github/assets/badge-schema.svg">
+  <img alt="docs pt-BR" src="https://raw.githubusercontent.com/AxisGov/runx/main/.github/assets/badge-lang.svg">
+  <img alt="licenca MIT" src="https://raw.githubusercontent.com/AxisGov/runx/main/.github/assets/badge-license.svg">
 </p>
 
 <p>
-  <a href="https://bittencourtthulio.github.io/expxdev/#runx"><strong>📘 Documentação do método</strong></a>
+  <a href="https://github.com/AxisGov/runx#readme"><strong>📘 Documentação do método</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://bittencourtthulio.github.io/expxdev/#runx">Estágios E1–E5</a>
+  <a href="#os-cinco-estágios">Estágios E1–E5</a>
   &nbsp;·&nbsp;
-  <a href="https://bittencourtthulio.github.io/expxdev/#ecossistema">O ecossistema</a>
+  <a href="https://github.com/AxisGov/expxdev#o-ecossistema">O ecossistema</a>
   &nbsp;·&nbsp;
-  <a href="https://bittencourtthulio.github.io/expxdev/#schema">Contratos</a>
+  <a href="https://github.com/AxisGov/expxdev#os-dois-contratos-compartilhados">Contratos</a>
 </p>
 
 <strong>A metade Run do método Expx</strong> — a skill de sustentação e manutenção<br>
@@ -39,7 +39,7 @@ de sistemas em produção para <a href="https://claude.com/claude-code">Claude C
 
 ## O ecossistema Expx
 
-O método Expx é um conjunto de skills que se compõem, instaladas e mantidas pelo CLI [`expxdev`](https://github.com/bittencourtthulio/expxdev).
+O método Expx é um conjunto de skills que se compõem, instaladas e mantidas pelo CLI [`expxdev`](https://github.com/AxisGov/expxdev).
 
 <picture>
   <img alt="O ecossistema Expx: a prodx decide se há trabalho, a runx decide como, as camadas modificam o comportamento e a mergex entrega" src=".github/assets/anim/ecossistema.svg" width="100%">
@@ -47,19 +47,19 @@ O método Expx é um conjunto de skills que se compõem, instaladas e mantidas p
 
 | Peça | Papel | Relação com a `runx` |
 |---|---|---|
-| **[expxdev](https://github.com/bittencourtthulio/expxdev)** | o CLI: instala, atualiza e diagnostica o ecossistema, e sobe o painel de operação | é quem instala esta skill (`npx expxdev init`) |
-| **[sprintx](https://github.com/bittencourtthulio/sprintx)** | **Build** — feature nova, F1…F6 | skill irmã; mesmos contratos, gatilho diferente |
+| **[expxdev](https://github.com/AxisGov/expxdev)** | o CLI: instala, atualiza e diagnostica o ecossistema, e sobe o painel de operação | é quem instala esta skill (`npx expxdev init`) |
+| **[sprintx](https://github.com/AxisGov/sprintx)** | **Build** — feature nova, F1…F6 | skill irmã; mesmos contratos, gatilho diferente |
 | **runx** *(este repositório)* | **Run** — ocorrência em produção, E1…E5 | — |
 | **[legadox](https://github.com/bittencourtthulio/legadox)** | **camada** de segurança para código legado | endurece os estágios da `runx` quando existe `PERFIL.md` |
 | **[stackx](https://github.com/bittencourtthulio/stackx)** | **camada** de convenções do repositório | a `runx` lê o `CONVENCOES.md` antes de planejar e de corrigir |
-| **[mergex](https://github.com/bittencourtthulio/mergex)** | entrega: branch, commit por task, PR e pacote de QA | abre a branch no início do E3 e entrega entre o E4 e o E5 |
+| **[mergex](https://github.com/AxisGov/mergex)** | entrega: branch, commit por task, PR e pacote de QA | abre a branch no início do E3 e entrega entre o E4 e o E5 |
 | **[memox](https://github.com/bittencourtthulio/MemoX)** | **camada** de memória do projeto | consultada no E1 sobre os arquivos impactados; a `runx` dispara a reindexação no E5 |
 | **[prodx](https://github.com/bittencourtthulio/prodx)** | **camada** de produto: decide **se** há trabalho | roda antes do E1: o `BRIEFING.md` assinado vira o `00-OCORRENCIA.md` |
-| **[buildx](https://github.com/bittencourtthulio/buildx)** | orquestra um projeto inteiro, da descrição ao sistema pronto | a `runx` não participa dela — a `buildx` constrói, não corrige; mas o projeto que ela entrega já vem com a `runx` instalada, para quem receber o sistema tratar defeito |
+| **[buildx](https://github.com/AxisGov/buildx)** | orquestra um projeto inteiro, da descrição ao sistema pronto | a `runx` não participa dela — a `buildx` constrói, não corrige; mas o projeto que ela entrega já vem com a `runx` instalada, para quem receber o sistema tratar defeito |
 
 **Camadas** (`legadox`, `stackx`, `memox`, `prodx`) sozinhas não fazem nada — elas modificam o comportamento da `sprintx` e da `runx`. A `prodx` é a única que roda **antes** de tudo: ela decide *se* há trabalho, e só depois a `runx` decide *como* fazê-lo. A ausência de qualquer irmã nunca quebra o fluxo desta skill: insumo que não existe vira aviso do que falta, nunca invenção.
 
-Detalhes do ecossistema inteiro no [README do expxdev](https://github.com/bittencourtthulio/expxdev).
+Detalhes do ecossistema inteiro no [README do expxdev](https://github.com/AxisGov/expxdev).
 
 ---
 
@@ -124,7 +124,7 @@ Várias sessões — do mesmo harness ou de harnesses diferentes — podem traba
 O instalador monta a estrutura **dos dois harnesses de uma vez**:
 
 ```bash
-git clone https://github.com/bittencourtthulio/runx.git
+git clone https://github.com/AxisGov/runx.git
 cd runx
 ./install.sh
 ```
@@ -540,11 +540,11 @@ MIT
 
 <div align="center">
 <sub>Parte do método <strong>Expx</strong> ·
-<a href="https://github.com/bittencourtthulio/expxdev">expxdev</a> ·
-<a href="https://github.com/bittencourtthulio/buildx">buildx</a> ·
-<a href="https://github.com/bittencourtthulio/sprintx">sprintx</a> ·
+<a href="https://github.com/AxisGov/expxdev">expxdev</a> ·
+<a href="https://github.com/AxisGov/buildx">buildx</a> ·
+<a href="https://github.com/AxisGov/sprintx">sprintx</a> ·
 runx ·
 <a href="https://github.com/bittencourtthulio/legadox">legadox</a> ·
 <a href="https://github.com/bittencourtthulio/stackx">stackx</a> ·
-<a href="https://github.com/bittencourtthulio/mergex">mergex</a></sub>
+<a href="https://github.com/AxisGov/mergex">mergex</a></sub>
 </div>
