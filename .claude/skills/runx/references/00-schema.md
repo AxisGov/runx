@@ -291,7 +291,7 @@ Regras duras deste kind:
 - `arquivos` mantém a forma do Contrato da Task do `SKILL.md`: um mapa com `cria` e
   `altera`, cada um uma lista de caminhos relativos à raiz do repositório (`[]` quando vazio).
 - `concluida_em` é `null` enquanto a task não estiver `concluida`.
-- `suite` é `nao_executada` até a suíte rodar para aquela task; depois `verde` ou `vermelha`.
+- `suite` é `nao_executada` antes dos testes; `parcial` quando só o subconjunto afetado foi executado; `verde` quando a suíte integral passou; `vermelha` quando houve falha.
 - Os campos do YAML são a mesma verdade da prosa do bloco correspondente. Os dois andam juntos.
 
 ### `BLOQUEIOS.md` → `kind: bloqueios`
