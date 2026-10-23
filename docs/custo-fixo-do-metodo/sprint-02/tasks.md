@@ -97,16 +97,16 @@ tasks:
     concluida_em: 2026-09-02
     suite: parcial
   - id: T-02.07
-    titulo: Corte de tres arquivos para delegar ao investigador
+    titulo: Corte de tres arquivos para delegar ao runx-investigador
     fase: F-02.3
     status: concluida
-    objetivo: Condicionar a delegacao ao investigador ao numero de arquivos candidatos do grep
+    objetivo: Condicionar a delegacao ao runx-investigador ao numero de arquivos candidatos do grep
     arquivos:
       cria: []
       altera: [.claude/skills/runx/references/01-investigacao.md]
-    teste_integracao: Roda testar-conteudo.sh e confere que a asercao investigador-corte-tres passa
+    teste_integracao: Roda testar-conteudo.sh e confere que a asercao runx-investigador-corte-tres passa
     teste_funcional: Dado o 01-investigacao.md alterado, a asercao encontra o corte de 3 arquivos e a instrucao de ler direto abaixo dele
-    criterio_aceite: A asercao investigador-corte-tres passa e o texto preserva qa e revisor-testes como sempre acionados
+    criterio_aceite: A asercao runx-investigador-corte-tres passa e o texto preserva qa e runx-revisor-testes como sempre acionados
     depende_de: []
     paralelizavel: true
     concluida_em: 2026-09-02
@@ -256,14 +256,14 @@ status: concluida   # 2026-09-02
 
 ```yaml
 id: T-02.07
-titulo: Corte de três arquivos para delegar ao investigador
-objetivo: Condicionar a delegação ao investigador ao número de arquivos candidatos do grep
+titulo: Corte de três arquivos para delegar ao runx-investigador
+objetivo: Condicionar a delegação ao runx-investigador ao número de arquivos candidatos do grep
 arquivos:
   cria: []
   altera: [.claude/skills/runx/references/01-investigacao.md]
-teste_integracao: Roda testar-conteudo.sh e confere que a asserção investigador-corte-tres passa
+teste_integracao: Roda testar-conteudo.sh e confere que a asserção runx-investigador-corte-tres passa
 teste_funcional: Dado o 01-investigacao.md alterado, a asserção encontra o corte de 3 arquivos e a instrução de ler direto abaixo dele
-criterio_aceite: A asserção investigador-corte-tres passa e o texto preserva qa e revisor-testes como sempre acionados
+criterio_aceite: A asserção runx-investigador-corte-tres passa e o texto preserva qa e runx-revisor-testes como sempre acionados
 depende_de: []
 paralelizavel: true
 status: concluida   # 2026-09-02

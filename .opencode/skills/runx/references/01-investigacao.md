@@ -2,7 +2,7 @@
 
 Você está no E1. Este estágio tem duas metades, nesta ordem: **E1.a base de conhecimento**, depois **E1.b causa raiz ou análise de impacto**. Você não planeja nada e não escreve nenhum código de implementação neste estágio.
 
-## Delegue ao agente `investigador` somente por falta de prova
+## Delegue ao agente `runx-investigador` somente por falta de prova
 
 Primeiro reúna a evidência local disponível: relato, busca pelos termos, código, testes e
 histórico relevante. Só delegue quando a causa ainda não estiver demonstrada por evidência local
@@ -25,8 +25,8 @@ Se o agente devolver `comprovada: false`, **respeite**: grave assim, com `STATUS
 Registre no rastro ao delegar e ao receber:
 
 ```
-python3 .claude/runx-hooks/comum/rastro.py --evento agente_iniciado  --agente investigador --fase e1
-python3 .claude/runx-hooks/comum/rastro.py --evento agente_concluido --agente investigador --fase e1 \
+python3 .claude/runx-hooks/comum/rastro.py --evento agente_iniciado  --agente runx-investigador --fase e1
+python3 .claude/runx-hooks/comum/rastro.py --evento agente_concluido --agente runx-investigador --fase e1 \
   --resultado <comprovada|nao_comprovada|impacto_mapeado> --detalhe "N arquivos de base, M lacunas"
 ```
 

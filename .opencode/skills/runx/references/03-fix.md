@@ -62,7 +62,7 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
 6. Antes de aceitar o verde, responda: **este teste falharia com uma implementação errada?** Se a resposta é não, o teste não discrimina — reescreva-o e volte ao passo 2.
 
    Quando o vermelho do teste de regressão estiver estabilizado e antes do fix final,
-   chame o `revisor-testes` uma vez. Registre o digest do teste; só repita se esse digest
+   chame o `runx-revisor-testes` uma vez. Registre o digest do teste; só repita se esse digest
    mudar. Ele devolve a tabela de achados e `TESTES: DISCRIMINAM` ou
    `TESTES: NÃO DISCRIMINAM`, sem corrigir. Siga a política comum de
    `references/06-estado.md`.
@@ -72,7 +72,7 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
    Registre no rastro:
 
    ```
-   python3 .claude/runx-hooks/comum/rastro.py --evento veredito_emitido --agente revisor-testes \
+   python3 .claude/runx-hooks/comum/rastro.py --evento veredito_emitido --agente runx-revisor-testes \
      --fase e3 --task <T-NN.MM> --resultado <discriminam|nao_discriminam> --detalhe "N achados"
    ```
 7. Verifique **de fato** o `criterio_aceite` da task — não presuma que ele decorre do teste verde.

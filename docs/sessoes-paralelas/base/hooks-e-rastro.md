@@ -63,7 +63,7 @@ com caminho absoluto, mesclando com o que já existe.
 
 **Quem emite `task_iniciada` hoje: ninguém.** `grep -n task_iniciada` em
 `.claude/skills/runx/references/03-fix.md` não devolve nada; o E3 grava `veredito_emitido`
-(revisor-testes) e `diagrama_nao_atualizado`. `rastro-arquivo.py` grava `arquivo_alterado`
+(runx-revisor-testes) e `diagrama_nao_atualizado`. `rastro-arquivo.py` grava `arquivo_alterado`
 com a task aberta lida do `tasks.md`, não do rastro. Uma reivindicação de task baseada no
 rastro precisa, antes, que o E3 passe a emitir o evento.
 

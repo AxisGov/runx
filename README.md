@@ -464,13 +464,13 @@ Os oito hooks de escrita e o de `Bash` no grupo `PreToolUse` rodam por um **desp
 Três subagentes rodam em contexto próprio, para que o julgamento não seja contaminado por quem produziu o trabalho:
 
 <picture>
-  <img alt="Três agentes de veredito, somente leitura: investigador, revisor-testes e qa. Apontam, não corrigem" src=".github/assets/anim/agentes.svg" width="100%">
+  <img alt="Três agentes de veredito, somente leitura: runx-investigador, runx-revisor-testes e qa. Apontam, não corrigem" src=".github/assets/anim/agentes.svg" width="100%">
 </picture>
 
 | Agente | Estágio | Papel |
 |---|---|---|
-| `investigador` | E1 | mapeia a base e comprova a causa raiz; só leitura, hipótese sem prova não passa |
-| `revisor-testes` | E3/E4 | responde a uma pergunta só: *esse teste passaria com a implementação errada?* |
+| `runx-investigador` | E1 | mapeia a base e comprova a causa raiz; só leitura, hipótese sem prova não passa |
+| `runx-revisor-testes` | E3/E4 | responde a uma pergunta só: *esse teste passaria com a implementação errada?* |
 | `qa` | E4 | valida a entrega contra plano, escopo e suíte, e emite o veredito; **não corrige nada** |
 
 ## O rastro de eventos
@@ -512,7 +512,7 @@ A skill é **neutra de harness**: o mesmo conteúdo serve aos dois, e só o regi
     assets/
       TEMPLATE-*.md           12 templates preenchíveis
   commands/runx*.md           os 6 comandos do Claude Code
-  agents/                     os 3 subagentes: investigador, revisor-testes, qa
+  agents/                     os 3 subagentes: runx-investigador, runx-revisor-testes, qa
   hooks/
     hooks.json                o registro dos hooks no harness
     hooks.exemplo.json        template do modo de cada hook, copiado para .expx/

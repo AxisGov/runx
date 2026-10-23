@@ -44,7 +44,7 @@ sem suíte inteira reprovando por trabalho alheio.
 ## O que o histórico já sabia
 
 Não há `memox` instalada neste repositório. Pelo versionador: `git log --oneline -1` devolve
-`f2f7916 Reduz o custo fixo do metodo: andaime condensado, suite parcial e investigador por
+`f2f7916 Reduz o custo fixo do metodo: andaime condensado, suite parcial e runx-investigador por
 evidencia`, árvore limpa. O plano anterior (`docs/custo-fixo-do-metodo/`) tocou `03-fix.md`,
 `04-qa.md`, `00-schema.md` e `task-so-fecha-verde.py` — os mesmos arquivos que este plano
 volta a tocar. Nenhum trabalho anterior tratou sessões paralelas, worktree ou identidade de

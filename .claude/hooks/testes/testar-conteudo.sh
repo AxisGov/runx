@@ -117,9 +117,9 @@ afirma e4-exige-completa \
   bash -c 'f="'"$S"'/references/04-qa.md"; grep -qE "parcial" "$f" \
     && grep -qiE "antes de emitir o veredito|antes do veredito" "$f"'
 
-echo "== investigador por evidencia =="
+echo "== runx-investigador por evidencia =="
 
-afirma investigador-sem-corte-arbitrario \
+afirma runx-investigador-sem-corte-arbitrario \
   "01-investigacao.md decide por evidencia, nao por quantidade" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -qi "evidência local" "$f" \
     && grep -qi "quantidade de arquivos não é critério" "$f"'
@@ -256,8 +256,8 @@ for trecho in ("nunca omita uma chave", "substitua os marcadores", "toda transi�
         raise SystemExit(1)
 PY'
 
-afirma agente-investigador-por-evidencia \
-  "investigador abre so quando a causa nao esta demonstrada por evidencia local" \
+afirma agente-runx-investigador-por-evidencia \
+  "runx-investigador abre so quando a causa nao esta demonstrada por evidencia local" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; \
     grep -qiE "evidência local.*causa|causa.*evidência local" "$f" \
     && ! grep -qE "3 \(tr[eê]s\)|tr[eê]s ou mais|>= ?3|3 ou mais" "$f"'
@@ -273,8 +273,8 @@ afirma agente-qa-por-lote-digest \
     && grep -qi "digest" "$f" && grep -qi "depois de.*correção\|após.*correção" "$f"'
 
 afirma agente-exclusao-mutua \
-  "investigador, revisor e qa nunca ficam ativos simultaneamente" \
-  bash -c 'grep -qiE "mutuamente exclusivos|nunca.*investigador.*revisor.*qa" "'"$S"'/references/06-estado.md"'
+  "runx-investigador, revisor e qa nunca ficam ativos simultaneamente" \
+  bash -c 'grep -qiE "mutuamente exclusivos|nunca.*runx-investigador.*revisor.*qa" "'"$S"'/references/06-estado.md"'
 
 afirma agente-sem-segunda-leitura \
   "digest inalterado suprime segunda leitura" \
@@ -300,8 +300,8 @@ afirma modelo-profundo-com-justificativa \
 
 afirma modelo-agentes-economicos \
   "agentes read-only fixam haiku ou sonnet conforme o papel" \
-  bash -c 'grep -q "^model: sonnet$" "'"$R"'/.claude/agents/investigador.md" \
-    && grep -q "^model: haiku$" "'"$R"'/.claude/agents/revisor-testes.md" \
+  bash -c 'grep -q "^model: sonnet$" "'"$R"'/.claude/agents/runx-investigador.md" \
+    && grep -q "^model: haiku$" "'"$R"'/.claude/agents/runx-revisor-testes.md" \
     && grep -q "^model: sonnet$" "'"$R"'/.claude/agents/qa.md"'
 
 afirma uso-limite-interrompe-agentes \
