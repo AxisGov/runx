@@ -9,7 +9,13 @@
 # valores, o caminho literal que os hooks buscam).
 set -uo pipefail
 
-R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# A mesma suíte também roda pela cópia no marketplace do EXpXDev.
+# Encontre o checkout que contém a skill, não dependa da profundidade do script.
+R="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ "$R" != "/" ] && [ ! -d "$R/.claude/skills/runx" ]; do
+  R="$(dirname "$R")"
+done
+[ -d "$R/.claude/skills/runx" ] || { echo "testar-conteudo: raiz do projeto não encontrada" >&2; exit 1; }
 S="$R/.claude/skills/runx"
 
 ok=0; falhou=0
