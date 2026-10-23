@@ -6,6 +6,15 @@ R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 HELPER="$R/.claude/hooks/comum/estado.py"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
+hash_arquivo() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum -- "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 -- "$1" | awk '{print $1}'
+  else
+    openssl dgst -sha256 "$1" | awk '{print $NF}'
+  fi
+}
 W="$T/projeto"
 O="$W/docs/manutencao/OC-2026-0042-cache"
 mkdir -p "$O/sprint-01" "$W/.expx" "$W/docs/eventos"
@@ -102,16 +111,17 @@ open(p,"w").write(json.dumps(e)+"\n")
 PY
 
 # Evento mecânico usa o rastro existente e não pode provocar churn de estado.
-antes_estado=$(sha256sum "$W/.expx/estado.json" | cut -d' ' -f1)
-antes_orq=$(sha256sum "$O/ORQUESTRADOR.md" | cut -d' ' -f1)
-antes_handoff=$(sha256sum "$W/.expx/handoff.md" | cut -d' ' -f1)
+antes_estado=$(hash_arquivo "$W/.expx/estado.json")
+antes_orq=$(hash_arquivo "$O/ORQUESTRADOR.md")
+antes_handoff=$(hash_arquivo "$W/.expx/handoff.md")
 (cd "$W" && python3 "$R/.claude/hooks/comum/rastro.py" --evento task_concluida \
   --trabalho OC-2026-0042 --fase e3 --task T-01.01 >/dev/null 2>&1)
+depois_estado=$(hash_arquivo "$W/.expx/estado.json")
+depois_orq=$(hash_arquivo "$O/ORQUESTRADOR.md")
+depois_handoff=$(hash_arquivo "$W/.expx/handoff.md")
 afirma mecanico-sem-churn "evento mecânico não reescreve estado/orquestrador/handoff" \
-  bash -c '[ "$1" = "$(sha256sum "$4/.expx/estado.json" | cut -d" " -f1)" ] && \
-    [ "$2" = "$(sha256sum "$5/ORQUESTRADOR.md" | cut -d" " -f1)" ] && \
-    [ "$3" = "$(sha256sum "$4/.expx/handoff.md" | cut -d" " -f1)" ]' \
-  _ "$antes_estado" "$antes_orq" "$antes_handoff" "$W" "$O"
+  bash -c '[ "$1" = "$4" ] && [ "$2" = "$5" ] && [ "$3" = "$6" ]' \
+  _ "$antes_estado" "$antes_orq" "$antes_handoff" "$depois_estado" "$depois_orq" "$depois_handoff"
 afirma jsonl-mecanico-pequeno "evento mecânico gera JSONL abaixo de 1 KB" \
   bash -c 'f="$1/docs/eventos/OC-2026-0042.jsonl"; [ -s "$f" ] && [ "$(wc -c < "$f")" -lt 1024 ]' _ "$W"
 if [ ! -s "$W/docs/eventos/OC-2026-0042.jsonl" ]; then
@@ -152,7 +162,7 @@ afirma retorno-e4-e3 "retorno E4→E3 é aceito e persistido" \
   _ "$volta" "$O" "$W"
 
 # Simula queda: task foi persistida, cache ficou atrasado. Reconstrução deriva do disco.
-sed -i 's/status: em_andamento/status: concluida/' "$O/sprint-01/tasks.md"
+sed 's/status: em_andamento/status: concluida/' "$O/sprint-01/tasks.md" > "$O/sprint-01/tasks.md.edicao" && mv "$O/sprint-01/tasks.md.edicao" "$O/sprint-01/tasks.md"
 recon_saida=""; recon=127
 if [ -f "$HELPER" ]; then
   recon_saida=$(cd "$W" && python3 "$HELPER" reconstruir --ocorrencia "$O" \
@@ -164,7 +174,7 @@ afirma reconstruir-interrupcao "reconstrução recupera estágio e contadores ap
 
 # SessionStart usa o trabalho do cache apenas para localizar a fonte versionada
 # e então a reconstrói; não depende de uma chamada do modelo.
-sed -i 's/"tasks_concluidas": 2/"tasks_concluidas": 0/' "$W/.expx/estado.json"
+sed 's/"tasks_concluidas": 2/"tasks_concluidas": 0/' "$W/.expx/estado.json" > "$W/.expx/estado.json.edicao" && mv "$W/.expx/estado.json.edicao" "$W/.expx/estado.json"
 sessao_saida=$(printf '{"hook_event_name":"SessionStart","cwd":"%s"}' "$W" | \
   (cd "$W" && python3 "$HELPER" session-start) 2>&1); sessao=$?
 afirma session-start-reconstroi "SessionStart recupera cache atrasado sem stdout" \
@@ -172,7 +182,7 @@ afirma session-start-reconstroi "SessionStart recupera cache atrasado sem stdout
   _ "$sessao" "$sessao_saida" "$W"
 
 # O encerramento é fato versionado e precisa sobreviver a qualquer reconstrução.
-sed -i 's/^status: em_andamento$/status: concluido/; s/^concluido_em: null$/concluido_em: 2026-10-21/' "$O/ORQUESTRADOR.md"
+sed 's/^status: em_andamento$/status: concluido/; s/^concluido_em: null$/concluido_em: 2026-10-21/' "$O/ORQUESTRADOR.md" > "$O/ORQUESTRADOR.md.edicao" && mv "$O/ORQUESTRADOR.md.edicao" "$O/ORQUESTRADOR.md"
 (cd "$W" && python3 "$HELPER" reconstruir --ocorrencia "$O" --agora 2026-10-21T12:03:00Z >/dev/null 2>&1); encerrado=$?
 afirma reconstruir-termino "reconstrução conserva trabalho, fase e task nulos após término" \
   bash -c '[ "$1" -eq 0 ] && python3 -c "import json,sys; e=json.load(open(sys.argv[1])); assert e[\"trabalho\"] is None and e[\"fase\"] is None and e[\"task\"] is None" "$2/.expx/estado.json"' \

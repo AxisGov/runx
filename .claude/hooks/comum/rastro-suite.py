@@ -44,16 +44,9 @@ def _sujos_fora_escopo(raiz, pasta):
     if _escopo is None or not pasta:
         return None
     try:
-        r = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"],
-                            cwd=raiz, capture_output=True, text=True, timeout=2)
-        if r.returncode != 0:
-            return None
         permitidos, _ = _escopo.autorizados(pasta)
         n_fora = 0
-        for linha in r.stdout.splitlines():
-            if len(linha) < 4:
-                continue
-            caminho = linha[3:].split(" -> ", 1)[-1]
+        for _status, caminho in R.status_git(raiz):
             n = _escopo.normaliza(caminho)
             if not n or _escopo.LIVRE.search(n) or _escopo.TESTE.search(n):
                 continue

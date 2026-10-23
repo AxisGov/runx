@@ -20,10 +20,8 @@ em silencio — nao ha o que comparar.
 """
 
 import importlib.util
-import json
 import os
 import re
-import subprocess
 import sys
 
 _AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -59,27 +57,8 @@ _spec.loader.exec_module(_escopo)
 
 
 def _git_status(raiz):
-    """Lista (status, caminho) de `git status --porcelain`, ou [] sem git."""
-    try:
-        r = subprocess.run(
-            ["git", "status", "--porcelain", "--untracked-files=all"],
-            cwd=raiz, capture_output=True, text=True, timeout=2,
-        )
-    except Exception:
-        return []
-    if r.returncode != 0:
-        return []
-    linhas = []
-    for linha in r.stdout.splitlines():
-        if len(linha) < 4:
-            continue
-        status, caminho = linha[:2].strip(), linha[3:]
-        # `git status --porcelain` usa "old -> new" no rename; o novo caminho
-        # e o que importa para checar escopo.
-        if " -> " in caminho:
-            caminho = caminho.split(" -> ", 1)[1]
-        linhas.append((status, caminho))
-    return linhas
+    """Lista (status, caminho) do parser NUL-safe comum, ou [] sem git."""
+    return R.status_git(raiz)
 
 
 def _sujos_fora_do_escopo(raiz, pasta):
@@ -104,15 +83,6 @@ def _task_em_andamento_de_outra_sessao(raiz, pasta, trabalho):
     circular com o hook de PreToolUse em tasks.md; a checagem aqui e' mais
     simples: so olha o que esta em_andamento AGORA nos arquivos).
     """
-    caminho_rastro = os.path.join(raiz, "docs", "eventos", f"{trabalho}.jsonl")
-    if not os.path.isfile(caminho_rastro):
-        return None, None
-    try:
-        with open(caminho_rastro, "r", encoding="utf-8") as fh:
-            linhas = fh.readlines()
-    except OSError:
-        return None, None
-
     try:
         sprints = sorted(
             d for d in os.listdir(pasta)
@@ -131,19 +101,16 @@ def _task_em_andamento_de_outra_sessao(raiz, pasta, trabalho):
             if not tid:
                 continue
             dona = None
-            for linha in reversed(linhas):
-                linha = linha.strip()
-                if not linha:
-                    continue
-                try:
-                    e = json.loads(linha)
-                except json.JSONDecodeError:
-                    continue
+            for e in R.eventos_rastro(raiz, trabalho, reverso=True):
                 if e.get("task") != tid:
                     continue
-                if e.get("evento") == "task_iniciada":
+                evento = e.get("evento")
+                if evento == "task_iniciada":
                     dona = e.get("sessao")
-                break
+                    break
+                if evento in ("task_concluida", "task_bloqueada"):
+                    break
+                # suite_executada e demais eventos nao decidem propriedade.
             if dona and dona != minha_sessao:
                 return tid, dona
     return None, None

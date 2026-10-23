@@ -85,13 +85,22 @@ function recuperarEstado(cwd, input) {
   }
 }
 
-function lerHooksJson(despachantePath) {
-  try {
-    const p = path.join(path.dirname(despachantePath), "..", "hooks.json");
-    return JSON.parse(fs.readFileSync(p, "utf8"));
-  } catch (e) {
-    return { hooks: {} };
+function lerHooksJson(despachantePath, cwd) {
+  // No repo da skill, hooks.json fica junto dos hooks; na instalação EXpXDev,
+  // os hooks compartilhados usam a cópia do plugin no marketplace.
+  const candidatos = [
+    path.join(path.dirname(despachantePath), "..", "hooks.json"),
+    path.join(cwd || ".", ".expx", "marketplace", "plugins", "expx", "hooks", "hooks.json"),
+  ];
+  for (const p of candidatos) {
+    try {
+      const config = JSON.parse(fs.readFileSync(p, "utf8"));
+      if (config && config.hooks && typeof config.hooks === "object" && !Array.isArray(config.hooks)) return config;
+    } catch (e) {
+      // Tenta a outra localização; fixture sem hooks.json segue fail-open.
+    }
   }
+  return { hooks: {} };
 }
 
 function grupoArgs(hooksJson, evento, matcherAlvo) {
@@ -142,7 +151,7 @@ async function RunxPonte(ctx) {
 
     let args = [];
     if (!process.env.RUNX_PONTE_DESPACHANTE) {
-      const hooksJson = lerHooksJson(despachantePath);
+      const hooksJson = lerHooksJson(despachantePath, cwd);
       const encontrados = grupoArgs(hooksJson, evento, matcher);
       if (!encontrados) return { codigo: 0, stderr: "" }; // grupo nao registrado
       args = encontrados;

@@ -9,7 +9,13 @@
 # valores, o caminho literal que os hooks buscam).
 set -uo pipefail
 
-R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# A mesma suíte também roda pela cópia no marketplace do EXpXDev.
+# Encontre o checkout que contém a skill, não dependa da profundidade do script.
+R="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [ "$R" != "/" ] && [ ! -d "$R/.claude/skills/runx" ]; do
+  R="$(dirname "$R")"
+done
+[ -d "$R/.claude/skills/runx" ] || { echo "testar-conteudo: raiz do projeto não encontrada" >&2; exit 1; }
 S="$R/.claude/skills/runx"
 
 ok=0; falhou=0
@@ -72,6 +78,23 @@ afirma template-condensado-campos-da-task \
   bash -c 'f="'"$S"'/assets/TEMPLATE-plano-condensado.md"; for c in id titulo objetivo arquivos \
     teste_integracao teste_funcional criterio_aceite depende_de paralelizavel status teste_regressao; do \
     grep -q "$c" "$f" || exit 1; done'
+
+afirma template-condensado-regressao-por-task \
+  "cada task tem uma unica chave de regressao, obrigatoria no bug e nula no exemplo comum" \
+  bash -c 'awk '"'"'
+    /^tasks:/ { em_tasks = 1; next }
+    em_tasks && /^---$/ { exit }
+    em_tasks && /^  - id:/ { task++; next }
+    em_tasks && /^    teste_regressao:/ {
+      quantidade[task]++
+      valor = $0
+      sub(/^[^:]*:[[:space:]]*/, "", valor)
+      sub(/[[:space:]]*$/, "", valor)
+      regressao[task] = valor
+    }
+    END { exit !(task == 2 && quantidade[1] == 1 && regressao[1] != "" &&
+                 regressao[1] != "null" && quantidade[2] == 1 && regressao[2] == "null") }
+  '"'"' "'"$S"'/assets/TEMPLATE-plano-condensado.md"'
 
 afirma e2-escolhe-formato \
   "02-plano.md diz quando usar cada formato" \
@@ -175,6 +198,37 @@ afirma e1-uma-por-arvore \
   "01-investigacao.md declara uma ocorrencia aberta por arvore, com opt-out" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -qi "uma ocorrência aberta por árvore" "$f" \
     && grep -qi "sem worktree" "$f"'
+
+afirma e1-sem-git-tambem-verifica-arvore \
+  "o caminho sem Git executa o Passo 0.a antes de criar o scaffold" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    awk "/^## Passo 0 —/,/^## Passo 0.a/" "$f" \
+      | tr "\n" " " | grep -q "execute sempre o Passo 0.a .*antes.*criar o scaffold"'
+
+afirma e1-entra-antes-de-gravar \
+  "a ocorrencia so e criada e registrada depois da entrada no worktree" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    entrar=$(grep -n "^5\\. \\*\\*Entrar" "$f" | cut -d: -f1); \
+    criar=$(grep -n "^6\\. \\*\\*Criar e registrar" "$f" | cut -d: -f1); \
+    [ -n "$entrar" ] && [ -n "$criar" ] && [ "$entrar" -lt "$criar" ] \
+      && awk "/^6\\. \\*\\*Criar e registrar/,/^Toda a pasta/" "$f" \
+        | grep -q "Depois de criar .*00-OCORRENCIA.md"'
+
+afirma e1-ambiguidade-preserva-bug \
+  "uma hipotese plausivel de bug preserva os portoes de reproducao e prova" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    awk "/\\*\\*Registre o tipo já classificado/,/\\*\\*Portão único/" "$f" \
+      | tr "\n" " " | grep -q "inclui .*bug.*opção plausível.*registre .*bug.*forma conservadora"'
+
+afirma e1-contrato-independe-do-harness \
+  "a transicao pode variar, mas a maquina de estados e o resultado nao" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    awk "/^5\\. \\*\\*Entrar/,/^6\\. \\*\\*Criar e registrar/" "$f" \
+      | tr "\n" " " | grep -q "mecanismo muda por harness; a máquina de estados e o resultado são os mesmos"'
+
+afirma e1-optout-nao-colide   "sem worktree explicito nao cria segunda ocorrencia na arvore ocupada"   bash -c 'f="'"$S"'/references/01-investigacao.md";     awk "/^## Passo 0.a/,/^## Passo 0.b/" "$f" | tr "\n" " "       | grep -qi "pedido explícito de não usar worktree.*Não crie o scaffold"'
+
+afirma e1-handoff-leva-contexto   "handoff sem transicao leva ID, tipo e relato literal para a nova sessao"   bash -c 'f="'"$S"'/references/01-investigacao.md";     trecho=$(awk "/^5\. \*\*Entrar/,/^6\. \*\*Criar e registrar/" "$f" | tr "\n" " ");     printf "%s" "$trecho" | grep -q "OC-ID"       && printf "%s" "$trecho" | grep -q "tipo classificado"       && printf "%s" "$trecho" | grep -q "relato literal completo"       && printf "%s" "$trecho" | grep -q "reenvie este bloco inteiro"'
 
 afirma e3-task-iniciada \
   "03-fix.md grava task_iniciada, task_concluida e task_bloqueada com --task" \
