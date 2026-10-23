@@ -29,7 +29,6 @@ tasks:
       cria: [{{caminho/relativo/novo.ext}}]
       altera: []
     teste_regressao: {{o teste que reproduz o problema e hoje falha - OBRIGATORIO quando tipo: bug}}
-    teste_regressao: null
     teste_integracao: {{o que valida, contra o que - uma frase, OBRIGATORIO}}
     teste_funcional: {{o que valida, com qual entrada e saida - uma frase, OBRIGATORIO}}
     criterio_aceite: {{condicao verificavel, binaria, sem adjetivo}}
@@ -45,6 +44,7 @@ tasks:
     arquivos:
       cria: []
       altera: [{{caminho/relativo/existente.ext}}]
+    teste_regressao: null
     teste_integracao: {{o que valida, contra o que - uma frase, OBRIGATORIO}}
     teste_funcional: {{o que valida, com qual entrada e saida - uma frase, OBRIGATORIO}}
     criterio_aceite: {{condicao verificavel, binaria, sem adjetivo}}

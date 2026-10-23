@@ -79,6 +79,19 @@ afirma template-condensado-campos-da-task \
     teste_integracao teste_funcional criterio_aceite depende_de paralelizavel status teste_regressao; do \
     grep -q "$c" "$f" || exit 1; done'
 
+afirma template-condensado-regressao-por-task \
+  "cada task tem uma unica chave de regressao, obrigatoria no bug e nula no exemplo comum" \
+  bash -c 'awk '"'"'
+    /^tasks:/ { em_tasks = 1; next }
+    em_tasks && /^---$/ { exit }
+    em_tasks && /^  - id:/ { task++; next }
+    em_tasks && /^    teste_regressao:/ {
+      quantidade[task]++
+      nula[task] = ($0 ~ /null/)
+    }
+    END { exit !(task == 2 && quantidade[1] == 1 && !nula[1] && quantidade[2] == 1 && nula[2]) }
+  '"'"' "'"$S"'/assets/TEMPLATE-plano-condensado.md"'
+
 afirma e2-escolhe-formato \
   "02-plano.md diz quando usar cada formato" \
   bash -c 'grep -q "condensado" "'"$S"'/references/02-plano.md" \
@@ -181,6 +194,33 @@ afirma e1-uma-por-arvore \
   "01-investigacao.md declara uma ocorrencia aberta por arvore, com opt-out" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -qi "uma ocorrência aberta por árvore" "$f" \
     && grep -qi "sem worktree" "$f"'
+
+afirma e1-sem-git-tambem-verifica-arvore \
+  "o caminho sem Git executa o Passo 0.a antes de criar o scaffold" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    awk "/^## Passo 0 —/,/^## Passo 0.a/" "$f" \
+      | tr "\n" " " | grep -q "execute sempre o Passo 0.a .*antes.*criar o scaffold"'
+
+afirma e1-entra-antes-de-gravar \
+  "a ocorrencia so e criada e registrada depois da entrada no worktree" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    entrar=$(grep -n "^5\\. \\*\\*Entrar" "$f" | cut -d: -f1); \
+    criar=$(grep -n "^6\\. \\*\\*Criar e registrar" "$f" | cut -d: -f1); \
+    [ -n "$entrar" ] && [ -n "$criar" ] && [ "$entrar" -lt "$criar" ] \
+      && awk "/^6\\. \\*\\*Criar e registrar/,/^Toda a pasta/" "$f" \
+        | grep -q "Depois de criar .*00-OCORRENCIA.md"'
+
+afirma e1-ambiguidade-preserva-bug \
+  "uma hipotese plausivel de bug preserva os portoes de reproducao e prova" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    awk "/\\*\\*Registre o tipo já classificado/,/\\*\\*Portão único/" "$f" \
+      | tr "\n" " " | grep -q "inclui .*bug.*opção plausível.*registre .*bug.*forma conservadora"'
+
+afirma e1-contrato-independe-do-harness \
+  "a transicao pode variar, mas a maquina de estados e o resultado nao" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; \
+    awk "/^5\\. \\*\\*Entrar/,/^6\\. \\*\\*Criar e registrar/" "$f" \
+      | tr "\n" " " | grep -q "mecanismo muda por harness; a máquina de estados e o resultado são os mesmos"'
 
 afirma e3-task-iniciada \
   "03-fix.md grava task_iniciada, task_concluida e task_bloqueada com --task" \

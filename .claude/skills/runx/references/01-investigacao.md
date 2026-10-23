@@ -56,14 +56,17 @@ Se `docs/manutencao/<OC-ID>-<slug>/base/` já existe completa e `01-CAUSA-RAIZ.m
 
 ## Passo 0 — Registrar a ocorrência
 
-**Ordem obrigatória quando há Git:** classifique primeiro o tipo da ocorrência
+**Ordem obrigatória em qualquer árvore:** classifique primeiro o tipo da ocorrência
 (`bug`, `melhoria-ui`, `melhoria-ux`, `novo-relatorio`, `regra-de-calculo`,
 `campo-novo` ou `outro`) a partir do relato, sem gravar arquivos. Em seguida
-execute os Passos 0.a e 0.b **antes** de criar o scaffold. Só depois de entrar
-ou retomar o worktree crie os arquivos abaixo, já na árvore da branch de
+execute sempre o Passo 0.a **antes** de criar o scaffold.
+
+Com Git e sem pedido explícito de não usar worktree, execute também o Passo
+0.b e só retome a criação depois de estar dentro da árvore da branch de
 ocorrência; `git worktree add` não transporta arquivos não commitados do
 checkout principal. Sem Git ou com pedido explícito de não usar worktree,
-siga diretamente para a criação abaixo.
+depois de cumprir o Passo 0.a crie o scaffold na árvore atual e registre
+`worktree: null`.
 
 Crie o scaffold, se ainda não existir:
 
@@ -81,8 +84,10 @@ docs/manutencao/<OC-ID>-<slug>/
 Preencha `00-OCORRENCIA.md` pelo contrato de entrada do SKILL.md. O relato do cliente é **copiado literalmente**, sem reescrever, sem corrigir, sem resumir. Se não houver identificador, gere `OC-<AAAA>-<NNNN>` sequencial olhando `docs/manutencao/` e `docs/relatorios/` — obtenha o ano com `date +%Y` do sistema, nunca de memória.
 
 **Registre o tipo já classificado** no `00-OCORRENCIA.md`. Se a classificação
-inicial foi ambígua, mantenha a escolha mais provável e registre-a em uma
-linha no próprio arquivo, sem esperar confirmação.
+inicial inclui `bug` como opção plausível, registre `bug` de forma conservadora
+até a evidência descartá-lo; isso preserva os portões de reprodução e prova.
+Somente quando a ambiguidade estiver restrita a tipos que não são bug mantenha
+a escolha mais provável, registrando-a no próprio arquivo sem esperar confirmação.
 
 **Portão único de pergunta deste estágio:** se `tipo: bug` e não houver passos de reprodução nem evidência suficiente para investigar (nenhum log, nenhuma mensagem de erro, nenhum dado concreto), PARE e pergunte isso — e apenas isso. Investigar bug sem reprodução é chute. Para os demais tipos, siga com o que houver.
 
@@ -119,9 +124,19 @@ Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). S
    | `Gemfile.lock` | `bundle install` |
    | `composer.lock` | `composer install` |
 
-   Nenhum lockfile reconhecido: registre a lacuna em `base/00-LACUNAS.md` e siga — não inventa comando.
-5. **Gravar** `worktree: ../<repo>--<OC-ID>-<slug>` no `00-OCORRENCIA.md` (que já é gravado **dentro** do worktree, não no checkout principal) e registrar no rastro: `fase_iniciada --fase e1 --detalhe "worktree ../<repo>--<OC-ID>-<slug>"`.
-6. **Entrar na área de trabalho.** No Claude Code, use `EnterWorktree` com `path` apontando para o diretório criado — a sessão passa a trabalhar de lá. No OpenCode e no MimoCode, anuncie: "Área de trabalho: `../<repo>--<OC-ID>-<slug>`. Abra o harness nesse diretório para continuar" e encerre o E1 aqui; o comando seguinte, rodado de dentro do worktree, retoma pela máquina de estados normalmente.
+   Nenhum lockfile reconhecido: guarde a lacuna e registre-a em `base/00-LACUNAS.md` depois de criar o scaffold no item 6 — não inventa comando.
+5. **Entrar na área de trabalho antes de gravar a ocorrência.** Se a raiz atual
+   já é o worktree associado à branch da ocorrência, siga para o item 6. Caso
+   contrário, use o mecanismo de transição oferecido pelo harness. No Claude
+   Code, use `EnterWorktree` com `path` apontando para o diretório criado. Em
+   qualquer harness sem transição na própria sessão — OpenCode e MimoCode,
+   inclusive — anuncie: "Área de trabalho: `../<repo>--<OC-ID>-<slug>`.
+   Abra o harness nesse diretório para continuar" e encerre o E1 aqui. O
+   mecanismo muda por harness; a máquina de estados e o resultado são os mesmos.
+6. **Criar e registrar, já dentro da árvore correta.** Volte a "Crie o scaffold"
+   acima. Depois de criar `00-OCORRENCIA.md` dentro do worktree, grave
+   `worktree: ../<repo>--<OC-ID>-<slug>` e registre no rastro:
+   `fase_iniciada --fase e1 --detalhe "worktree ../<repo>--<OC-ID>-<slug>"`.
 
 Toda a pasta `docs/manutencao/<OC-ID>-<slug>/` desta ocorrência vive dentro do worktree a partir daqui; nada dela é gravado no checkout principal.
 
