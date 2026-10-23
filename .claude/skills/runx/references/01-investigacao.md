@@ -56,6 +56,15 @@ Se `docs/manutencao/<OC-ID>-<slug>/base/` já existe completa e `01-CAUSA-RAIZ.m
 
 ## Passo 0 — Registrar a ocorrência
 
+**Ordem obrigatória quando há Git:** classifique primeiro o tipo da ocorrência
+(`bug`, `melhoria-ui`, `melhoria-ux`, `novo-relatorio`, `regra-de-calculo`,
+`campo-novo` ou `outro`) a partir do relato, sem gravar arquivos. Em seguida
+execute os Passos 0.a e 0.b **antes** de criar o scaffold. Só depois de entrar
+ou retomar o worktree crie os arquivos abaixo, já na árvore da branch de
+ocorrência; `git worktree add` não transporta arquivos não commitados do
+checkout principal. Sem Git ou com pedido explícito de não usar worktree,
+siga diretamente para a criação abaixo.
+
 Crie o scaffold, se ainda não existir:
 
 ```
@@ -71,10 +80,9 @@ docs/manutencao/<OC-ID>-<slug>/
 
 Preencha `00-OCORRENCIA.md` pelo contrato de entrada do SKILL.md. O relato do cliente é **copiado literalmente**, sem reescrever, sem corrigir, sem resumir. Se não houver identificador, gere `OC-<AAAA>-<NNNN>` sequencial olhando `docs/manutencao/` e `docs/relatorios/` — obtenha o ano com `date +%Y` do sistema, nunca de memória.
 
-**Classifique o tipo** como `bug`, `melhoria-ui`, `melhoria-ux`, `novo-relatorio`,
-`regra-de-calculo`, `campo-novo` ou `outro`. Se ambíguo, escolha o mais provável,
-registre a escolha em uma linha no próprio `00-OCORRENCIA.md` e siga sem esperar
-confirmação.
+**Registre o tipo já classificado** no `00-OCORRENCIA.md`. Se a classificação
+inicial foi ambígua, mantenha a escolha mais provável e registre-a em uma
+linha no próprio arquivo, sem esperar confirmação.
 
 **Portão único de pergunta deste estágio:** se `tipo: bug` e não houver passos de reprodução nem evidência suficiente para investigar (nenhum log, nenhuma mensagem de erro, nenhum dado concreto), PARE e pergunte isso — e apenas isso. Investigar bug sem reprodução é chute. Para os demais tipos, siga com o que houver.
 
