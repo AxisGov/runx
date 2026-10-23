@@ -86,6 +86,41 @@ def ler_evento():
     return evento
 
 
+def status_git(raiz):
+    """Retorna pares (status, caminho) do porcelain v1 sem corromper nomes.
+
+    Com -z o Git termina registros em NUL, nao cita caracteres especiais e,
+    em rename/copy, entrega o destino no primeiro registro e a origem no
+    seguinte. Assim um nome literal contendo " -> " nunca e confundido com a
+    seta decorativa do formato textual.
+    """
+    try:
+        import subprocess
+
+        proc = subprocess.run(
+            ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+            cwd=raiz, capture_output=True, text=True, timeout=2,
+        )
+    except Exception:
+        return []
+    if proc.returncode != 0:
+        return []
+
+    registros = proc.stdout.split("\0")
+    saida = []
+    i = 0
+    while i < len(registros):
+        registro = registros[i]
+        i += 1
+        if len(registro) < 4:
+            continue
+        xy = registro[:2]
+        saida.append((xy.strip(), registro[3:]))
+        if "R" in xy or "C" in xy:
+            i += 1  # origem do rename/copy; o destino acima governa o escopo
+    return saida
+
+
 def caminho_da_ferramenta(evento):
     """O `file_path` de Write/Edit, relativo a raiz. None quando nao houver."""
     entrada = evento.get("tool_input") or {}
@@ -463,6 +498,56 @@ def modo(nome_hook, raiz=None):
 
 
 # ------------------------------------------------------------------ rastro
+def caminhos_rastro(raiz, trabalho):
+    """Segmentos do rastro em ordem cronologica: rotacionados e arquivo atual."""
+    pasta = os.path.join(raiz, "docs", "eventos")
+    atual = os.path.join(pasta, f"{trabalho}.jsonl")
+    rotacionados = []
+    try:
+        prefixo = f"{trabalho}."
+        for nome in os.listdir(pasta):
+            if not nome.startswith(prefixo) or not nome.endswith(".jsonl"):
+                continue
+            numero = nome[len(prefixo):-6]
+            if numero.isdigit():
+                rotacionados.append((int(numero), os.path.join(pasta, nome)))
+    except OSError:
+        pass
+    caminhos = [p for _, p in sorted(rotacionados)]
+    if os.path.isfile(atual):
+        caminhos.append(atual)
+    return caminhos
+
+
+def eventos_rastro(raiz, trabalho, reverso=False):
+    """Itera eventos validos incluindo todos os segmentos rotacionados.
+
+    reverso=True comeca no evento mais recente do arquivo atual, depois
+    percorre os segmentos rotacionados do maior para o menor.
+    """
+    caminhos = caminhos_rastro(raiz, trabalho)
+    if reverso:
+        caminhos = list(reversed(caminhos))
+    for caminho in caminhos:
+        try:
+            with open(caminho, "r", encoding="utf-8") as fh:
+                linhas = fh.readlines()
+        except OSError:
+            continue
+        if reverso:
+            linhas = reversed(linhas)
+        for linha in linhas:
+            linha = linha.strip()
+            if not linha:
+                continue
+            try:
+                evento = json.loads(linha)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(evento, dict):
+                yield evento
+
+
 
 
 def _rotaciona(caminho):

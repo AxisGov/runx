@@ -87,9 +87,13 @@ afirma template-condensado-regressao-por-task \
     em_tasks && /^  - id:/ { task++; next }
     em_tasks && /^    teste_regressao:/ {
       quantidade[task]++
-      nula[task] = ($0 ~ /null/)
+      valor = $0
+      sub(/^[^:]*:[[:space:]]*/, "", valor)
+      sub(/[[:space:]]*$/, "", valor)
+      regressao[task] = valor
     }
-    END { exit !(task == 2 && quantidade[1] == 1 && !nula[1] && quantidade[2] == 1 && nula[2]) }
+    END { exit !(task == 2 && quantidade[1] == 1 && regressao[1] != "" &&
+                 regressao[1] != "null" && quantidade[2] == 1 && regressao[2] == "null") }
   '"'"' "'"$S"'/assets/TEMPLATE-plano-condensado.md"'
 
 afirma e2-escolhe-formato \
@@ -221,6 +225,10 @@ afirma e1-contrato-independe-do-harness \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; \
     awk "/^5\\. \\*\\*Entrar/,/^6\\. \\*\\*Criar e registrar/" "$f" \
       | tr "\n" " " | grep -q "mecanismo muda por harness; a máquina de estados e o resultado são os mesmos"'
+
+afirma e1-optout-nao-colide   "sem worktree explicito nao cria segunda ocorrencia na arvore ocupada"   bash -c 'f="'"$S"'/references/01-investigacao.md";     awk "/^## Passo 0.a/,/^## Passo 0.b/" "$f" | tr "\n" " "       | grep -qi "pedido explícito de não usar worktree.*Não crie o scaffold"'
+
+afirma e1-handoff-leva-contexto   "handoff sem transicao leva ID, tipo e relato literal para a nova sessao"   bash -c 'f="'"$S"'/references/01-investigacao.md";     trecho=$(awk "/^5\. \*\*Entrar/,/^6\. \*\*Criar e registrar/" "$f" | tr "\n" " ");     printf "%s" "$trecho" | grep -q "OC-ID"       && printf "%s" "$trecho" | grep -q "tipo classificado"       && printf "%s" "$trecho" | grep -q "relato literal completo"       && printf "%s" "$trecho" | grep -q "reenvie este bloco inteiro"'
 
 afirma e3-task-iniciada \
   "03-fix.md grava task_iniciada, task_concluida e task_bloqueada com --task" \

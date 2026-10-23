@@ -306,6 +306,12 @@ caso "rastro sem sessao (legado) nunca avisa" 0 "$H/runx/task-reivindicada.py" "
 mkdir -p "$W/.expx"; echo '{"hooks":{"task-reivindicada":"bloqueio"}}' > "$W/.expx/hooks.json"
 J=$(mk_em_andamento -); J=${J/\"file_path\": \"PLACEHOLDER\"/\"file_path\": \"$W/$T\"}
 caso "bloqueio barra reivindicada"     2 "$H/runx/task-reivindicada.py" "$J"
+mv "$RASTRO" "${RASTRO%.jsonl}.1.jsonl"
+grava_evento suite_executada "opencode@abc"
+J=$(mk_em_andamento "claude-code@xyz"); J=${J/\"file_path\": \"PLACEHOLDER\"/\"file_path\": \"$W/$T\"}
+caso "reivindicacao sobrevive rotacao e evento neutro" 2 "$H/runx/task-reivindicada.py" "$J"
+rm -f "${RASTRO%.jsonl}.1.jsonl"
+
 rm -f "$W/.expx/hooks.json"
 : > "$RASTRO"
 
@@ -450,6 +456,13 @@ print(doze and extras and d["sessao"] == "claude-code@teste" and d["harness"] ==
 '
 
 echo "== arvore-limpa-antes-da-suite =="
+SETA_REL='src/pedido/nome -> final.py'
+mkdir -p "$W/src/pedido"; touch "$W/$SETA_REL"
+script_py "git-status-preserva-seta-literal" '
+print(any(caminho == "src/pedido/nome -> final.py" for _status, caminho in R.status_git("'"$W"'")))
+'
+rm -f "$W/$SETA_REL"
+
 # Precisa de escopo declarado (causa raiz com arquivos_impactados) e de um
 # arquivo de verdade sujo no git para $W, que ja e repositorio real. Limpeza
 # cirurgica dos arquivos desta secao apenas — nunca `git clean -fdx`, que

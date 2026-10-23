@@ -299,6 +299,28 @@ afirma shell-env-recupera-estado \
   "shell.env reconstrói cache atrasado usando o helper instalado" \
   bash -c 'python3 -c "import json,sys; assert json.load(open(sys.argv[1]))[\"tasks_concluidas\"]==1" "$1/.expx/estado.json"' _ "$REC"
 
+echo "== fallback de configuracao =="
+
+CF="$W/proj-config-fallback"
+mkdir -p "$CF/.claude/runx-hooks/comum" "$CF/.expx/marketplace/plugins/expx/hooks"
+cp "$FAKE" "$CF/.claude/runx-hooks/comum/despachante.py"
+printf '%s\n' '{"hooks":null}' > "$CF/.claude/runx-hooks/hooks.json"
+printf '%s\n' '{"hooks":{"PreToolUse":[{"matcher":"Write|Edit","hooks":[{"command":"python3 .claude/runx-hooks/comum/despachante.py runx/escopo-da-ocorrencia"}]}]}}' \
+  > "$CF/.expx/marketplace/plugins/expx/hooks/hooks.json"
+python3 -c "
+import json, sys
+pedido = {'pontePath': sys.argv[1], 'cwd': sys.argv[2], 'hook': 'tool.execute.before',
+          'input': {'tool':'write','sessionID':'S1','callID':'CFG'},
+          'output': {'args': {'filePath':'src/a.ts','content':'x'}}}
+json.dump(pedido, open(sys.argv[3], 'w'))
+" "$PONTE" "$CF" "$W/pedido.json"
+rm -f "$W/recebido.json" "$W/argv.json"
+RUNX_FAKE_W="$W" node "$DRIVER" "$W/pedido.json" "$W/resultado.json" 2>"$W/stderr-node.txt"
+afirma hooks-null-tenta-marketplace \
+  "hooks: null local e rejeitado e a configuracao valida do marketplace e usada" \
+  bash -c 'test -f "$1" && python3 -c "import json,sys; assert json.load(open(sys.argv[1])) == [\"runx/escopo-da-ocorrencia\"]" "$2"' \
+    _ "$W/recebido.json" "$W/argv.json"
+
 echo "== robustez =="
 
 python3 -c "

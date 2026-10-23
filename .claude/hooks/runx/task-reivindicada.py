@@ -15,7 +15,6 @@ Nasce em AVISO. Falha ABERTA.
 """
 
 import importlib.util
-import json
 import os
 import sys
 
@@ -35,28 +34,14 @@ NOME = "task-reivindicada"
 ALVO = _tsfv.ALVO
 
 
-def _sessao_dona(caminho_rastro, task_id):
+def _sessao_dona(raiz, trabalho, task_id):
     """Sessao que tem a task aberta agora, ou None se ninguem tem.
 
-    Le o arquivo de tras para frente: o evento mais recente com aquele `task`
-    entre `task_iniciada`, `task_concluida` e `task_bloqueada` decide.
+    Le todos os segmentos do rastro de tras para frente. O evento mais recente
+    com aquele `task` entre `task_iniciada`, `task_concluida` e
+    `task_bloqueada` decide; eventos de observabilidade nao encerram a busca.
     """
-    if not os.path.isfile(caminho_rastro):
-        return None
-    try:
-        with open(caminho_rastro, "r", encoding="utf-8") as fh:
-            linhas = fh.readlines()
-    except OSError:
-        return None
-
-    for linha in reversed(linhas):
-        linha = linha.strip()
-        if not linha:
-            continue
-        try:
-            e = json.loads(linha)
-        except json.JSONDecodeError:
-            continue
+    for e in R.eventos_rastro(raiz, trabalho, reverso=True):
         if e.get("task") != task_id:
             continue
         evento = e.get("evento")
@@ -90,7 +75,6 @@ def main():
         sys.exit(0)
 
     trabalho = R.trabalho_id(os.path.join(raiz, "docs", "manutencao", m.group(1)))
-    caminho_rastro = os.path.join(raiz, "docs", "eventos", f"{trabalho}.jsonl")
     minha_sessao = R.sessao(evento)
 
     for t in tasks:
@@ -99,7 +83,7 @@ def main():
         tid = R.texto(t.get("id"))
         if not tid:
             continue
-        dona = _sessao_dona(caminho_rastro, tid)
+        dona = _sessao_dona(raiz, trabalho, tid)
         if dona and dona != minha_sessao:
             R.barra_ou_avisa(
                 NOME,

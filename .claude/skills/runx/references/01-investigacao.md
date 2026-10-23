@@ -61,12 +61,13 @@ Se `docs/manutencao/<OC-ID>-<slug>/base/` já existe completa e `01-CAUSA-RAIZ.m
 `campo-novo` ou `outro`) a partir do relato, sem gravar arquivos. Em seguida
 execute sempre o Passo 0.a **antes** de criar o scaffold.
 
-Com Git e sem pedido explícito de não usar worktree, execute também o Passo
-0.b e só retome a criação depois de estar dentro da árvore da branch de
-ocorrência; `git worktree add` não transporta arquivos não commitados do
-checkout principal. Sem Git ou com pedido explícito de não usar worktree,
-depois de cumprir o Passo 0.a crie o scaffold na árvore atual e registre
-`worktree: null`.
+Com Git e sem pedido explícito de não usar worktree, execute também o Passo 0.b
+e só retome a criação depois de estar dentro da árvore da branch de ocorrência;
+`git worktree add` não transporta arquivos não commitados do checkout principal.
+Sem Git ou com pedido explícito de não usar worktree, crie o scaffold na árvore
+atual e registre `worktree: null` **somente se** o Passo 0.a não encontrou outra
+ocorrência aberta. Se encontrou, aplique primeiro a decisão de árvore ocupada
+descrita naquele passo; nunca crie uma segunda ocorrência na mesma árvore.
 
 Crie o scaffold, se ainda não existir:
 
@@ -99,8 +100,10 @@ a escolha mais provável, registrando-a no próprio arquivo sem esperar confirma
 
 Antes de criar a pasta: verifique se `docs/manutencao/` desta raiz já tem outra ocorrência aberta (um `ORQUESTRADOR.md` sem `status: concluido`, ou — antes do E2 — um `00-OCORRENCIA.md` sem ocorrência fechada correspondente em `docs/relatorios/`).
 
-- **Com git:** siga para o Passo 0.b — o worktree resolve a colisão isolando esta ocorrência em árvore própria; nenhuma pergunta é necessária.
-- **Sem git:** a raiz está genuinamente ocupada. Anuncie qual ocorrência está aberta e o estágio dela, e pergunte se é para continuar nela ou encerrá-la antes de abrir esta. É uma pergunta legítima aqui, porque sem worktree não há como isolar as duas.
+Se encontrou outra ocorrência aberta:
+
+- **Com Git e worktree permitido:** siga para o Passo 0.b — o worktree resolve a colisão isolando esta ocorrência em árvore própria; nenhuma pergunta é necessária.
+- **Sem Git ou com pedido explícito de não usar worktree:** a raiz está genuinamente ocupada. Não crie o scaffold. Anuncie qual ocorrência está aberta e o estágio dela, e pergunte se é para continuar nela ou encerrá-la antes de abrir esta. É uma pergunta legítima aqui, porque sem worktree não há isolamento entre as duas.
 
 ## Passo 0.b — Abrir a área de trabalho (worktree)
 
@@ -130,8 +133,11 @@ Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). S
    contrário, use o mecanismo de transição oferecido pelo harness. No Claude
    Code, use `EnterWorktree` com `path` apontando para o diretório criado. Em
    qualquer harness sem transição na própria sessão — OpenCode e MimoCode,
-   inclusive — anuncie: "Área de trabalho: `../<repo>--<OC-ID>-<slug>`.
-   Abra o harness nesse diretório para continuar" e encerre o E1 aqui. O
+   inclusive — anuncie um bloco de handoff com **Área de trabalho**,
+   **OC-ID**, **tipo classificado** e **relato literal completo**. Instrua:
+   "Abra o harness nesse diretório e reenvie este bloco inteiro para continuar".
+   A nova sessão não avança sem receber novamente o relato literal, o ID e o
+   tipo; anunciar somente o caminho é insuficiente. Encerre o E1 aqui. O
    mecanismo muda por harness; a máquina de estados e o resultado são os mesmos.
 6. **Criar e registrar, já dentro da árvore correta.** Volte a "Crie o scaffold"
    acima. Depois de criar `00-OCORRENCIA.md` dentro do worktree, grave

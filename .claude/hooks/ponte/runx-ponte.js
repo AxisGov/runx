@@ -95,7 +95,7 @@ function lerHooksJson(despachantePath, cwd) {
   for (const p of candidatos) {
     try {
       const config = JSON.parse(fs.readFileSync(p, "utf8"));
-      if (config && typeof config.hooks === "object") return config;
+      if (config && config.hooks && typeof config.hooks === "object" && !Array.isArray(config.hooks)) return config;
     } catch (e) {
       // Tenta a outra localização; fixture sem hooks.json segue fail-open.
     }
