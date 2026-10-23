@@ -6,6 +6,13 @@ set -uo pipefail
 
 H="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ok=0; falhou=0
+W=""; W2=""; W3=""
+limpar() {
+  [ -z "$W" ] || rm -rf "$W"
+  [ -z "$W2" ] || rm -rf "$W2"
+  [ -z "$W3" ] || rm -rf "$W3"
+}
+trap limpar EXIT
 
 conf() { # conf <esperado(0|2)> <descricao> <comando...>
   local esp="$1" desc="$2"; shift 2
@@ -62,7 +69,7 @@ checa("tab indenta igual a espaco", len(R.lista(d.get("tasks"))) == 1)
 
 sys.exit(1 if falhas else 0)
 PY
-[ $? -eq 0 ] && ok=$((ok+7)) || falhou=$((falhou+1))
+[ $? -eq 0 ] && ok=$((ok+8)) || falhou=$((falhou+1))
 
 echo
 echo "== segredo: exemplo passa, credencial real barra =="
@@ -111,7 +118,7 @@ PY
 
 echo
 echo "== sem-jargao-no-uso: prosa de cliente nao pode disparar =="
-W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
+W=$(mktemp -d)
 mkdir -p "$W/.git" "$W/docs/relatorios/r" "$W/.expx"
 echo '{"hooks":{"sem-jargao-no-uso":"bloqueio"}}' > "$W/.expx/hooks.json"
 U="$W/docs/relatorios/r/uso.md"
@@ -154,7 +161,7 @@ conf 0 ".github/workflows nao e cobrado"             esc .github/workflows/ci.ym
 
 echo
 echo "== uma-ocorrencia-por-arvore: nao acusa a si mesma, nem a que ja fechou =="
-W2="$(mktemp -d)"; trap 'rm -rf "$W2"' EXIT
+W2="$(mktemp -d)"
 OCA="$W2/docs/manutencao/OC-2026-0100-primeira"; mkdir -p "$OCA"
 printf -- '---\nkind: ocorrencia\ntrabalho_id: OC-2026-0100\n---\n' > "$OCA/00-OCORRENCIA.md"
 printf -- '---\nkind: orquestrador\ntrabalho_id: OC-2026-0100\nestagio: e5\nstatus: concluido\nconcluido_em: 2026-08-20\n---\n' > "$OCA/ORQUESTRADOR.md"
