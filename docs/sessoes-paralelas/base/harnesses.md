@@ -53,7 +53,7 @@ mesmos nomes de argumento. O que muda é a pasta de instalação e o nome do har
 |---|---|---|---|
 | Só leitura | `tools: Read, Glob, Grep, Bash` no frontmatter | `permission: { edit: deny, bash: deny }` (`tools:` está deprecated) | `tool_allowlist` ou `permission` |
 
-Os três agentes do runx (`investigador`, `revisor-testes`, `qa`) já são lidos pelos três
+Os três agentes do runx (`runx-investigador`, `runx-revisor-testes`, `qa`) já são lidos pelos três
 harnesses a partir de `.claude/agents/`. A tradução do campo de restrição não é desta
 feature: ela não muda os agentes.
 

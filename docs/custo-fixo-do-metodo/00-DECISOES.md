@@ -54,15 +54,15 @@ decisoes:
     status: fechada
     bloqueante: false
   - id: D-09
-    decisao: O investigador so e delegado quando o grep do E1 devolver 3 ou mais arquivos candidatos
+    decisao: O runx-investigador so e delegado quando o grep do E1 devolver 3 ou mais arquivos candidatos
     alternativa_descartada: Corte em 5 arquivos, ou corte por bytes somados da base
     motivo: Escolha do usuario; contagem de arquivos e derivavel do grep sem custo extra de medicao
     status: fechada
     bloqueante: false
   - id: D-10
-    decisao: qa e revisor-testes continuam sempre acionados quando disponiveis
+    decisao: qa e runx-revisor-testes continuam sempre acionados quando disponiveis
     alternativa_descartada: Aplicar corte por tamanho tambem a eles
-    motivo: qa e a unica verificacao independente do metodo; revisor-testes responde uma pergunta so e e barato
+    motivo: qa e a unica verificacao independente do metodo; runx-revisor-testes responde uma pergunta so e e barato
     status: fechada
     bloqueante: false
   - id: D-11
@@ -115,7 +115,7 @@ D-06 | O enum `suite` ganha o valor `parcial` | Campo irmão, ou só prosa | Esc
 D-07 | E3 roda subconjunto por task; E4 exige execução completa verde antes do veredito | Suíte inteira a cada task | Move a garantia para o portão final sem perdê-la
 D-08 | task-so-fecha-verde aceita `parcial` ou `verde` | Manter exigindo verde | Sem isso o hook barraria toda conclusão sob a regra nova
 D-09 | Investigador delegado só com 3+ arquivos candidatos no grep do E1 | Corte em 5; corte por bytes | Escolha do usuário; derivável do grep sem medição extra
-D-10 | qa e revisor-testes sempre acionados quando disponíveis | Aplicar corte a eles também | qa é a única verificação independente; revisor-testes é barato
+D-10 | qa e runx-revisor-testes sempre acionados quando disponíveis | Aplicar corte a eles também | qa é a única verificação independente; runx-revisor-testes é barato
 D-11 | Criar verificador executável do conteúdo das skills | Alterar markdown sem teste | Regra 3 (TDD) exige teste que falhe antes (lacuna L-01)
 D-12 | Criar teste de espelhamento .claude/ vs .opencode/ | Continuar por diff manual | DR-44 obriga espelhar; lacuna L-03
 D-13 | Nenhuma regra inviolável acrescentada, removida ou renumerada; continuam 15 | Criar regra nova | São otimizações de custo, não mudança de método

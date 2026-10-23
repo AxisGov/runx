@@ -21,7 +21,7 @@ caminho_critico: [T-01.01, T-02.01, T-02.02, T-02.03, T-02.08, T-02.09]
 
 Reduzir o custo fixo do método runx em três frentes: um plano condensado em arquivo único
 quando há 1 sprint e 1 fase, a suíte parcial por task com a completa no portão do E4, e a
-delegação ao investigador só quando o grep devolve 3 ou mais arquivos. Nenhuma regra
+delegação ao runx-investigador só quando o grep devolve 3 ou mais arquivos. Nenhuma regra
 inviolável muda; continuam 15.
 
 ## 2. Mapa e ordem de leitura

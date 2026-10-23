@@ -29,7 +29,22 @@ EVENTOS = {
     "commit_criado", "pr_aberto",
     "marco_transicao", "marco_bloqueio", "marco_decisao", "marco_termino",
 }
-AGENTES = {"principal", "auditor-plano", "revisor-testes", "qa", "investigador", "cartografo"}
+AGENTES = {
+    "principal",
+    "auditor-plano",
+    "sprintx-revisor-testes",
+    "sprintx-investigador",
+    "runx-revisor-testes",
+    "runx-investigador",
+    "qa",
+    "legadox-cartografo",
+    "avaliador-de-raio",
+    "stackx-cartografo",
+    "revisor-diff",
+    "analista-de-conflito",
+    "auditor-design",
+    "cartografo-visual",
+}
 
 
 def gravar_mecanico(*, tipo, trabalho, fase, identificador, resultado, raiz):

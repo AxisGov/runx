@@ -64,7 +64,7 @@ O script cobre, em asserções nomeadas:
 - o enum `suite` inclui `parcial` no `00-schema.md`;
 - o `03-fix.md` manda rodar o subconjunto por task e não a suíte inteira;
 - o `04-qa.md` exige a execução completa antes do veredito;
-- o `01-investigacao.md` traz o corte de 3 arquivos para delegar ao investigador;
+- o `01-investigacao.md` traz o corte de 3 arquivos para delegar ao runx-investigador;
 - nenhum arquivo de instrução contém marcador `{{...}}` vazado (DR-14);
 - as 15 regras invioláveis continuam sendo 15 (D-13).
 

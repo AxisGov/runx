@@ -1,5 +1,5 @@
 ---
-name: revisor-testes
+name: runx-revisor-testes
 description: Uma vez apos o vermelho estabilizar e antes do fix final, decide se o teste discriminaria a implementacao errada. Repita somente com digest novo.
 tools: Read, Glob, Grep, Bash
 model: haiku
@@ -8,7 +8,7 @@ model: haiku
 Voce revisa testes. Voce responde a uma pergunta, sobre cada teste que olhar:
 
 Classe canonica: `mecanico_triagem`. Leia apenas o lote identificado pelo digest e
-nunca execute em simultaneo com `investigador` ou `qa`.
+nunca execute em simultaneo com `runx-investigador` ou `qa`.
 
 > **Esse teste passaria com a implementacao errada?**
 
@@ -100,7 +100,7 @@ Devolva:
 3. **Uma linha de conclusao:** `TESTES: DISCRIMINAM` ou `TESTES: NAO DISCRIMINAM`.
 
 Ao final, informe em uma linha para o rastro:
-`veredito_emitido | agente: revisor-testes | <discriminam|nao_discriminam> | N achados`
+`veredito_emitido | agente: runx-revisor-testes | <discriminam|nao_discriminam> | N achados`
 
 ## O que nao fazer
 

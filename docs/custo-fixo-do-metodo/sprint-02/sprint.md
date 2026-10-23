@@ -17,7 +17,7 @@ atualizado_em: 2026-09-02
 ## Objetivo
 
 Implementar as três melhorias na skill runx: o andaime condensado (D-01 a D-05), a suíte
-parcial por task (D-06 a D-08) e o acionamento do investigador por evidência (D-09, D-10).
+parcial por task (D-06 a D-08) e o acionamento do runx-investigador por evidência (D-09, D-10).
 Cada uma é uma fase independente; a fase de fechamento espelha tudo para `.opencode/`.
 
 ## Fases

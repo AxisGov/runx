@@ -12,8 +12,8 @@ Leia esta referência somente ao registrar um marco, delegar uma leitura indepen
 
 | Papel | Quando abrir | Quando repetir | Classe |
 |---|---|---|---|
-| investigador | somente quando a causa raiz ainda não estiver demonstrada por evidência local | apenas após nova evidência material ou nova pergunta causal | `raciocinio_normal` |
-| revisor-testes | uma vez, depois que o teste de regressão vermelho estabilizar e antes do fix final | somente quando mudar o digest do teste | `mecanico_triagem` |
+| runx-investigador | somente quando a causa raiz ainda não estiver demonstrada por evidência local | apenas após nova evidência material ou nova pergunta causal | `raciocinio_normal` |
+| runx-revisor-testes | uma vez, depois que o teste de regressão vermelho estabilizar e antes do fix final | somente quando mudar o digest do teste | `mecanico_triagem` |
 | qa | uma vez no E4 por lote coerente | somente depois de correção que mude o digest do lote | `raciocinio_normal` |
 
 As classes são independentes do fornecedor:
