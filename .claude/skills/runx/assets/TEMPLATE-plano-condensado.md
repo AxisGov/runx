@@ -29,6 +29,7 @@ tasks:
       cria: [{{caminho/relativo/novo.ext}}]
       altera: []
     teste_regressao: {{o teste que reproduz o problema e hoje falha - OBRIGATORIO quando tipo: bug}}
+    teste_regressao: null
     teste_integracao: {{o que valida, contra o que - uma frase, OBRIGATORIO}}
     teste_funcional: {{o que valida, com qual entrada e saida - uma frase, OBRIGATORIO}}
     criterio_aceite: {{condicao verificavel, binaria, sem adjetivo}}
@@ -66,7 +67,7 @@ tasks:
 > `TEMPLATE-tasks.md`, os tres arquivos separados de sempre.
 >
 > `teste_regressao` existe APENAS na primeira task da primeira fase, e e obrigatorio quando
-> `tipo: bug`. Nas demais tasks, a chave nao aparece.
+> `tipo: bug`. Nas demais tasks, a chave permanece com valor `null`.
 
 # Plano — Sprint {{NN}} — {{título da sprint}}
 
