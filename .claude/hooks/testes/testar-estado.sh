@@ -2,8 +2,11 @@
 # Contrato executável de marcos, recuperação e handoff da RunX.
 set -uo pipefail
 
-R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-HELPER="$R/.claude/hooks/comum/estado.py"
+# A mesma suite roda pela fonte (.claude/hooks/testes) e pela copia no marketplace
+# do expx (.expx/marketplace/plugins/expx/hooks/testes): os helpers sao achados a
+# partir da arvore de hooks que contem este script, nunca da raiz do repositorio.
+HK="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HELPER="$HK/comum/estado.py"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 hash_arquivo() {
@@ -114,7 +117,7 @@ PY
 antes_estado=$(hash_arquivo "$W/.expx/estado.json")
 antes_orq=$(hash_arquivo "$O/ORQUESTRADOR.md")
 antes_handoff=$(hash_arquivo "$W/.expx/handoff.md")
-(cd "$W" && python3 "$R/.claude/hooks/comum/rastro.py" --evento task_concluida \
+(cd "$W" && python3 "$HK/comum/rastro.py" --evento task_concluida \
   --trabalho OC-2026-0042 --fase e3 --task T-01.01 >/dev/null 2>&1)
 depois_estado=$(hash_arquivo "$W/.expx/estado.json")
 depois_orq=$(hash_arquivo "$O/ORQUESTRADOR.md")
@@ -187,6 +190,27 @@ sed 's/^status: em_andamento$/status: concluido/; s/^concluido_em: null$/conclui
 afirma reconstruir-termino "reconstrução conserva trabalho, fase e task nulos após término" \
   bash -c '[ "$1" -eq 0 ] && python3 -c "import json,sys; e=json.load(open(sys.argv[1])); assert e[\"trabalho\"] is None and e[\"fase\"] is None and e[\"task\"] is None" "$2/.expx/estado.json"' \
   _ "$encerrado" "$W"
+
+# Handoff acima do limite recusa o marco inteiro: nada de estado.json novo com
+# handoff.md velho (katosmv/conselhos-municipais#208). Muitas sprints estouram os
+# ponteiros do handoff; a validação vem antes de qualquer escrita.
+G="$W/docs/manutencao/OC-2026-0044-grande"
+mkdir -p "$G"
+sed 's/OC-2026-0042/OC-2026-0044/; s/^status: concluido$/status: em_andamento/; s/^concluido_em: .*$/concluido_em: null/' \
+  "$O/ORQUESTRADOR.md" > "$G/ORQUESTRADOR.md"
+for n in $(seq -w 1 40); do
+  mkdir -p "$G/sprint-$n"
+  sed "s/OC-2026-0042/OC-2026-0044/; s/sprint-01/sprint-$n/" "$O/sprint-01/tasks.md" > "$G/sprint-$n/tasks.md"
+done
+antes_estado=$(hash_arquivo "$W/.expx/estado.json")
+antes_handoff=$(hash_arquivo "$W/.expx/handoff.md")
+(cd "$W" && python3 "$HELPER" reconstruir --ocorrencia "$G" --agora 2026-10-21T12:04:00Z >/dev/null 2>&1); grande=$?
+depois_estado=$(hash_arquivo "$W/.expx/estado.json")
+depois_handoff=$(hash_arquivo "$W/.expx/handoff.md")
+afirma handoff-grande-nao-meio-grava "handoff acima de 2 KB falha sem gravar estado nem handoff" \
+  bash -c '[ "$1" -ne 0 ] && [ "$2" = "$4" ] && [ "$3" = "$5" ] && \
+    ! find "$6/.expx" -name "*.tmp" -print -quit | grep -q .' \
+  _ "$grande" "$antes_estado" "$antes_handoff" "$depois_estado" "$depois_handoff" "$W"
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]

@@ -61,6 +61,16 @@ grupos=d.get("hooks",{}).get("SessionStart",[])
 assert any("estado.py\" session-start" in h.get("command", "") for g in grupos for h in g.get("hooks", []))
 PY' _ "$D"
 
+# O expx publica a arvore de hooks tambem em .expx/marketplace/plugins/expx/hooks,
+# um nivel mais funda que .claude/hooks. A suite de estado precisa achar os helpers
+# nesse layout (katosmv/conselhos-municipais#208).
+MKT="$T/marketplace/.expx/marketplace/plugins/expx"
+mkdir -p "$MKT"
+cp -R "$F/.claude/hooks" "$MKT/hooks"
+afirma estado-pelo-marketplace \
+  "testar-estado.sh passa rodando da copia no marketplace do expx" \
+  bash -c 'bash "$1/hooks/testes/testar-estado.sh" >/dev/null 2>&1' _ "$MKT"
+
 if [ "$codigo" -ne 0 ]; then printf '%s\n' "$saida" | sed 's/^/          /' | head -20; fi
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
