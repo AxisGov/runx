@@ -10,7 +10,7 @@ prejudicar a leitura humana — a máquina lê o YAML, a pessoa lê a prosa abai
 O painel apenas LÊ. Esta skill continua sendo a única a escrever.
 
 Este contrato é compartilhado com a skill irmã `sprintx`. Os kinds comuns —
-`orquestrador`, `sprint`, `fases`, `tasks`, `bloqueios`, `base_indice` — são idênticos
+`orquestrador`, `sprint`, `fases`, `tasks`, `plano`, `bloqueios`, `base_indice` — são idênticos
 campo por campo nas duas skills. Divergência quebra o painel.
 
 Os campos de indexação `modulo_afetado`, `arquivos_alterados` e `palavras_chave` existem nas
