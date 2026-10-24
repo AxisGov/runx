@@ -347,8 +347,9 @@ atualizado_em: 2026-08-29
 
 ### `sprint-NN/tasks.md` no formato condensado → `kind: plano`
 
-**Exclusivo da runx.** A `sprintx` não produz este kind, e por isso ele pode evoluir sem
-afetar a skill irmã — ao contrário de `sprint`, `fases` e `tasks`, que são compartilhados.
+**Compartilhado com a sprintx.** Criado exclusivo da runx (DR-62), o kind foi adotado depois
+pela `sprintx`, cujo `00-schema.md` o declara compartilhado: ele evolui de forma compatível
+nas duas skills, como `sprint`, `fases` e `tasks`.
 
 Quando o plano tem **uma sprint e uma fase**, o E2 grava um arquivo único em vez de três.
 O arquivo continua se chamando `sprint-NN/tasks.md`: é o caminho que os hooks de método
