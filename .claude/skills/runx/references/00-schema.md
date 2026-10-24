@@ -10,7 +10,7 @@ prejudicar a leitura humana — a máquina lê o YAML, a pessoa lê a prosa abai
 O painel apenas LÊ. Esta skill continua sendo a única a escrever.
 
 Este contrato é compartilhado com a skill irmã `sprintx`. Os kinds comuns —
-`orquestrador`, `sprint`, `fases`, `tasks`, `bloqueios`, `base_indice` — são idênticos
+`orquestrador`, `sprint`, `fases`, `tasks`, `plano`, `bloqueios`, `base_indice` — são idênticos
 campo por campo nas duas skills. Divergência quebra o painel.
 
 Os campos de indexação `modulo_afetado`, `arquivos_alterados` e `palavras_chave` existem nas
@@ -253,6 +253,14 @@ EXATAMENTE os mesmos campos do Contrato da Task do `SKILL.md` — nenhum a mais,
 menos — acrescidos apenas dos dois campos de execução (`concluida_em`, `suite`) e do
 vínculo com a fase (`fase`).
 
+**Campos de extensão de task.** A única exceção ao "nenhum a mais" são os campos de task
+que uma camada **instalada e ativa** declara no próprio schema — hoje, `design_refs` e
+`tom_estetico`, da designx (`references/06-schema.md` dela). Eles só aparecem com a
+camada ativa, nunca substituem nem renomeiam campo do contrato, e valem igual nos
+kinds `tasks` e `plano`. Quem lê o plano preserva a chave como veio; campo que nenhuma
+camada instalada e ativa declara continua proibido, inclusive o de uma camada instalada
+mas inativa. A regra é a mesma na sprintx e na runx.
+
 ```yaml
 ---
 expx_schema: 1
@@ -339,8 +347,9 @@ atualizado_em: 2026-08-29
 
 ### `sprint-NN/tasks.md` no formato condensado → `kind: plano`
 
-**Exclusivo da runx.** A `sprintx` não produz este kind, e por isso ele pode evoluir sem
-afetar a skill irmã — ao contrário de `sprint`, `fases` e `tasks`, que são compartilhados.
+**Compartilhado com a sprintx.** Criado exclusivo da runx (DR-62), o kind foi adotado depois
+pela `sprintx`, cujo `00-schema.md` o declara compartilhado: ele evolui de forma compatível
+nas duas skills, como `sprint`, `fases` e `tasks`.
 
 Quando o plano tem **uma sprint e uma fase**, o E2 grava um arquivo único em vez de três.
 O arquivo continua se chamando `sprint-NN/tasks.md`: é o caminho que os hooks de método
