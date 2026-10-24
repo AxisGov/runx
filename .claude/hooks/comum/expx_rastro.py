@@ -248,13 +248,34 @@ def _sem_comentario(bruto):
     return bruto
 
 
+def _itens(corpo):
+    """Separa `a, "b,c", d` nas virgulas FORA de aspas.
+
+    `split(",")` partia `"src/a,b.ts"` em dois caminhos que nao existem.
+    """
+    itens, atual, aspas = [], [], None
+    for ch in corpo:
+        if aspas:
+            if ch == aspas:
+                aspas = None
+        elif ch in "\"'":
+            aspas = ch
+        elif ch == ",":
+            itens.append("".join(atual))
+            atual = []
+            continue
+        atual.append(ch)
+    itens.append("".join(atual))
+    return itens
+
+
 def _valor(bruto):
     bruto = _sem_comentario(bruto).strip()
     if not bruto:
         return None
     if bruto.startswith("[") and bruto.endswith("]"):
         corpo = bruto[1:-1].strip()
-        return [_valor(x) for x in corpo.split(",")] if corpo else []
+        return [_valor(x) for x in _itens(corpo)] if corpo else []
     # Aspas fecham o valor mesmo com sobra depois (ex.: comentario ja removido
     # deixou espaco), entao procuramos o fechamento em vez de exigir que seja
     # o ultimo caractere.
@@ -455,13 +476,27 @@ def pasta_ocorrencia(raiz=None):
     return None
 
 
+# O id vira nome de arquivo em docs/eventos/: so um segmento, sem `/`, sem `..`
+# e sem caminho absoluto (mesma regra do `--trabalho` do expx-revisao).
+_TRABALHO = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+
+
+def trabalho_seguro(trabalho):
+    """O id, se ele so pode nomear um arquivo dentro de docs/eventos/; senao None."""
+    t = None if trabalho is None else str(trabalho)
+    return t if t and _TRABALHO.fullmatch(t) else None
+
+
 def trabalho_id(pasta):
-    """O `trabalho_id` do frontmatter da ocorrencia; cai para o nome da pasta."""
+    """O `trabalho_id` do frontmatter da ocorrencia; cai para o nome da pasta.
+
+    Valor que escaparia de docs/eventos/ (absoluto, com `/` ou `..`) e ignorado.
+    """
     if not pasta:
         return None
     for arquivo in ("ORQUESTRADOR.md", "00-OCORRENCIA.md", "01-CAUSA-RAIZ.md"):
         fm = frontmatter(os.path.join(pasta, arquivo))
-        if fm.get("trabalho_id"):
+        if trabalho_seguro(fm.get("trabalho_id")):
             return str(fm["trabalho_id"])
     return os.path.basename(pasta)
 
@@ -500,6 +535,8 @@ def modo(nome_hook, raiz=None):
 # ------------------------------------------------------------------ rastro
 def caminhos_rastro(raiz, trabalho):
     """Segmentos do rastro em ordem cronologica: rotacionados e arquivo atual."""
+    if not trabalho_seguro(trabalho):
+        return []
     pasta = os.path.join(raiz, "docs", "eventos")
     atual = os.path.join(pasta, f"{trabalho}.jsonl")
     rotacionados = []
@@ -577,7 +614,7 @@ def grava(evento, *, trabalho, fase=None, task=None, agente="principal",
     """
     try:
         raiz = raiz or raiz_repo()
-        if not trabalho:
+        if not trabalho_seguro(trabalho):
             return
         pasta = os.path.join(raiz, "docs", "eventos")
         os.makedirs(pasta, exist_ok=True)

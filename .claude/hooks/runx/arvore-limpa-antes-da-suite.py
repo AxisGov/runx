@@ -61,17 +61,28 @@ def _git_status(raiz):
     return R.status_git(raiz)
 
 
+def _relativo_a_raiz(raiz, p):
+    """Caminho do plano na forma do `git status` (relativo a raiz).
+
+    Absoluto dentro da raiz vira relativo; o resto fica como esta.
+    """
+    if not os.path.isabs(p):
+        return p
+    r = os.path.relpath(os.path.realpath(p), os.path.realpath(raiz)).replace(os.sep, "/")
+    return p if r == ".." or r.startswith("../") else r
+
+
 def _sujos_fora_do_escopo(raiz, pasta):
     permitidos, _ = _escopo.autorizados(pasta)
+    # `git status` ja da caminho relativo a raiz, entao a comparacao e por
+    # igualdade: sufixo deixaria `outro/src/x.py` passar por `src/x.py`.
+    permitidos = {_relativo_a_raiz(raiz, p) for p in permitidos}
     fora = []
     for status, caminho in _git_status(raiz):
         n = _escopo.normaliza(caminho)
         if not n or _escopo.LIVRE.search(n) or _escopo.TESTE.search(n):
             continue
-        combina = n in permitidos or any(
-            "/" in p and (n.endswith("/" + p) or p.endswith("/" + n)) for p in permitidos
-        )
-        if not combina:
+        if n not in permitidos:
             fora.append(n)
     return fora
 
