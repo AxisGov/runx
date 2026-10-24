@@ -2,8 +2,11 @@
 # Contrato executável de marcos, recuperação e handoff da RunX.
 set -uo pipefail
 
-R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-HELPER="$R/.claude/hooks/comum/estado.py"
+# A mesma suite roda pela fonte (.claude/hooks/testes) e pela copia no marketplace
+# do expx (.expx/marketplace/plugins/expx/hooks/testes): os helpers sao achados a
+# partir da arvore de hooks que contem este script, nunca da raiz do repositorio.
+HK="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HELPER="$HK/comum/estado.py"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 hash_arquivo() {
@@ -114,7 +117,7 @@ PY
 antes_estado=$(hash_arquivo "$W/.expx/estado.json")
 antes_orq=$(hash_arquivo "$O/ORQUESTRADOR.md")
 antes_handoff=$(hash_arquivo "$W/.expx/handoff.md")
-(cd "$W" && python3 "$R/.claude/hooks/comum/rastro.py" --evento task_concluida \
+(cd "$W" && python3 "$HK/comum/rastro.py" --evento task_concluida \
   --trabalho OC-2026-0042 --fase e3 --task T-01.01 >/dev/null 2>&1)
 depois_estado=$(hash_arquivo "$W/.expx/estado.json")
 depois_orq=$(hash_arquivo "$O/ORQUESTRADOR.md")
