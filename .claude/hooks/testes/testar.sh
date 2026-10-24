@@ -484,6 +484,14 @@ caso "comando comum nao dispara"  0 "$H/runx/arvore-limpa-antes-da-suite.py" "$(
 mkdir -p "$W/src/pedido"; touch "$W/src/pedido/fora.ts"
 mkdir -p "$W/.expx"; echo '{"hooks":{"arvore-limpa-antes-da-suite":"bloqueio"}}' > "$W/.expx/hooks.json"
 caso "bloqueio barra sujo fora"   2 "$H/runx/arvore-limpa-antes-da-suite.py" "$(bash_ev 'npm test')"
+limpa_sujeira
+# git status da caminho relativo a raiz: `outro/src/frete/calculo.ts` nao e o
+# `src/frete/calculo.ts` autorizado so por terminar igual (CodeAnt, conselhos#208)
+mkdir -p "$W/outro/src/frete"; touch "$W/outro/src/frete/calculo.ts"
+caso "sufixo de caminho nao autoriza"   2 "$H/runx/arvore-limpa-antes-da-suite.py" "$(bash_ev 'npm test')"
+rm -rf "$W/outro"
+touch "$W/src/frete/calculo.ts"
+caso "caminho igual segue autorizado"   0 "$H/runx/arvore-limpa-antes-da-suite.py" "$(bash_ev 'npm test')"
 rm -f "$W/.expx/hooks.json"
 limpa_sujeira
 SEMGIT="$(mktemp -d)"
@@ -491,6 +499,28 @@ saida=$(printf '{"tool_name":"Bash","tool_input":{"command":"npm test"}}' | (cd 
 if [ "$real" -eq 0 ]; then ok=$((ok+1)); printf '  ok   %-46s exit=%s\n' "sem git nunca avisa" "$real"
 else falhou=$((falhou+1)); printf '  FALHA %-45s esperado=0 real=%s\n     %s\n' "sem git nunca avisa" "$real" "$saida"; fi
 rm -rf "$SEMGIT"
+
+echo "== frontmatter: lista inline com aspas e trabalho_id inseguro =="
+script_py "lista-inline-aspas-com-virgula" '
+print(R._valor("[\"src/a,b.ts\", c.ts, '"'"'d,e.py'"'"']") == ["src/a,b.ts", "c.ts", "d,e.py"])
+'
+script_py "lista-inline-sem-aspas-inalterada" '
+print(R._valor("[a, b, 3]") == ["a", "b", 3] and R._valor("[]") == [])
+'
+INSEG="$(mktemp -d)"
+mkdir -p "$INSEG/repo/docs/manutencao/OC-9-x"
+printf -- '---\nkind: ocorrencia\ntrabalho_id: ../../../fora\n---\n' > "$INSEG/repo/docs/manutencao/OC-9-x/00-OCORRENCIA.md"
+script_py "trabalho-id-com-ponto-ponto-cai-no-nome-da-pasta" '
+print(R.trabalho_id("'"$INSEG"'/repo/docs/manutencao/OC-9-x") == "OC-9-x")
+'
+script_py "grava-recusa-trabalho-fora-de-docs-eventos" '
+import os
+for t in ("../../../fora", "'"$INSEG"'/abs", "a/b"):
+    R.grava("teste", trabalho=t, raiz="'"$INSEG"'/repo")
+print(not os.path.exists("'"$INSEG"'/fora.jsonl") and not os.path.exists("'"$INSEG"'/abs.jsonl")
+      and not os.path.exists("'"$INSEG"'/repo/docs/eventos/a") and R.caminhos_rastro("'"$INSEG"'/repo", "../x") == [])
+'
+rm -rf "$INSEG"
 
 echo "== raiz_repo em worktree =="
 # .git dentro de um worktree e ARQUIVO (gitdir: <principal>/.git/worktrees/<nome>),
