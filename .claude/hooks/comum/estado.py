@@ -156,7 +156,6 @@ def derivar(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcad
         bruto = json.dumps(estado, ensure_ascii=False, separators=(",", ":")) + "\n"
         if len(bruto.encode("utf-8")) >= 1024:
             raise ValueError("estado excede 1 KB")
-        escrever_atomico(estado_path, bruto)
 
         linhas = [
             "# Handoff RunX",
@@ -173,6 +172,9 @@ def derivar(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcad
         handoff = "\n".join(linhas) + "\n"
         if len(handoff.encode("utf-8")) > 2000:
             raise ValueError("handoff excede 500 tokens")
+        # Os dois limites sao conferidos antes de qualquer escrita: falhar no
+        # handoff depois de gravar o estado deixaria um sem o outro.
+        escrever_atomico(estado_path, bruto)
         escrever_atomico(os.path.join(raiz, ".expx", "handoff.md"), handoff)
     return trabalho, fase
 
