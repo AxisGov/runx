@@ -128,6 +128,18 @@ def caminhos_handoff(raiz, ocorrencia):
 
 
 def derivar(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcada=None):
+    trabalho, fase, escritas = planejar_derivado(raiz, ocorrencia, agora, marco_tipo, marco_id, fase_forcada)
+    gravar(escritas)
+    return trabalho, fase
+
+
+def gravar(escritas):
+    for caminho, conteudo in escritas:
+        escrever_atomico(caminho, conteudo)
+
+
+def planejar_derivado(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcada=None):
+    """Estado e handoff derivados, ja conferidos contra os limites, sem gravar nada."""
     orquestrador = os.path.join(ocorrencia, "ORQUESTRADOR.md")
     fm, tasks, concluidas, corrente, bloqueios = artefatos(ocorrencia)
     fase = fase_forcada or R.texto(fm.get("estagio"))
@@ -174,9 +186,8 @@ def derivar(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcad
             raise ValueError("handoff excede 500 tokens")
         # Os dois limites sao conferidos antes de qualquer escrita: falhar no
         # handoff depois de gravar o estado deixaria um sem o outro.
-        escrever_atomico(estado_path, bruto)
-        escrever_atomico(os.path.join(raiz, ".expx", "handoff.md"), handoff)
-    return trabalho, fase
+        return trabalho, fase, [(estado_path, bruto), (os.path.join(raiz, ".expx", "handoff.md"), handoff)]
+    return trabalho, fase, []
 
 
 def localizar_ocorrencia_ativa(raiz):
@@ -225,11 +236,17 @@ def executar(args):
         fase_nova = args.resultado
         if (fase_atual, fase_nova) not in TRANSICOES:
             raise ValueError("transicao invalida")
-    if os.path.isfile(caminho_orquestrador):
-        atualizar_orquestrador(caminho_orquestrador, fase_nova, args.tipo, agora)
-    elif not (args.tipo == "transicao" and fase_atual == "e1" and fase_nova == "e2"):
+    tem_orquestrador = os.path.isfile(caminho_orquestrador)
+    if not tem_orquestrador and not (args.tipo == "transicao" and fase_atual == "e1" and fase_nova == "e2"):
         raise ValueError("ORQUESTRADOR.md ausente")
-    trabalho, fase = derivar(raiz, ocorrencia, agora, args.tipo, args.id, fase_nova)
+    # Tudo o que recusa o marco (transicao, limites do estado e do handoff) e conferido
+    # antes da primeira escrita: recusado depois de gravar o ORQUESTRADOR.md, o marco
+    # deixaria a etapa nova com estado e handoff velhos. O derivado nao depende do que
+    # atualizar_orquestrador muda: a etapa vem de fase_nova e o termino, do tipo.
+    trabalho, fase, escritas = planejar_derivado(raiz, ocorrencia, agora, args.tipo, args.id, fase_nova)
+    if tem_orquestrador:
+        atualizar_orquestrador(caminho_orquestrador, fase_nova, args.tipo, agora)
+    gravar(escritas)
     CLI_RASTRO.gravar_mecanico(
         tipo=args.tipo, trabalho=trabalho, fase=fase, identificador=args.id,
         resultado=args.resultado, raiz=raiz,

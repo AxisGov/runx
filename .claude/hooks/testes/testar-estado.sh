@@ -212,5 +212,18 @@ afirma handoff-grande-nao-meio-grava "handoff acima de 2 KB falha sem gravar est
     ! find "$6/.expx" -name "*.tmp" -print -quit | grep -q .' \
   _ "$grande" "$antes_estado" "$antes_handoff" "$depois_estado" "$depois_handoff" "$W"
 
+# O marco grava o ORQUESTRADOR.md e deriva estado e handoff: recusado pelo limite,
+# nem o orquestrador avança (etapa nova com estado e handoff velhos).
+# (dia diferente do `atualizado_em` atual: um marco aceito mudaria o arquivo)
+antes_orq=$(hash_arquivo "$G/ORQUESTRADOR.md")
+(cd "$W" && python3 "$HELPER" marco --ocorrencia "$G" --tipo decisao --id D-01 --resultado ok \
+  --agora 2026-10-25T12:05:00Z >/dev/null 2>&1); grande_marco=$?
+depois_orq=$(hash_arquivo "$G/ORQUESTRADOR.md")
+marco_estado=$(hash_arquivo "$W/.expx/estado.json")
+marco_handoff=$(hash_arquivo "$W/.expx/handoff.md")
+afirma handoff-grande-marco-nao-avanca "marco recusado pelo handoff não grava o ORQUESTRADOR.md" \
+  bash -c '[ "$1" -ne 0 ] && [ "$2" = "$3" ] && [ "$4" = "$5" ] && [ "$6" = "$7" ]' \
+  _ "$grande_marco" "$antes_orq" "$depois_orq" "$depois_estado" "$marco_estado" "$depois_handoff" "$marco_handoff"
+
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
