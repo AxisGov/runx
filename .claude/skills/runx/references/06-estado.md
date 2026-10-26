@@ -101,4 +101,18 @@ O primeiro comando é executado automaticamente ao retomar pelo `SessionStart`
 ou pela ponte; `marco` reconstrói dos artefatos antes de validar e persistir a
 mudança. Relógio injetável é reservado às fixtures de teste.
 
+O helper recusa, antes de qualquer escrita, com código diferente de zero e o
+motivo em stderr (`estado.py: <motivo>`; stdout continua vazio):
+
+- `--ocorrencia` que não é uma pasta existente de `docs/manutencao/`, ou cujo
+  `trabalho_id` (do `ORQUESTRADOR.md`, ou do `00-OCORRENCIA.md` antes do E2)
+  falta, não tem a forma `OC-<AAAA>-<NNNN>` ou não casa com o nome da pasta
+  (`<OC-ID>` ou `<OC-ID>-<slug>`). O id nunca é deduzido do nome da pasta (DR-85);
+- `--tipo termino` fora do E5, o último estágio (DR-86).
+
+No `SessionStart` (e na ponte), a ocorrência é a aberta mais recente em
+`docs/manutencao/`, pelos artefatos versionados — nunca o `trabalho` do
+`estado.json`, que é só exibição. Ocorrência encerrada não é reconstruída, e
+uma recusa da validação não trava a sessão: o helper sai 0 sem gravar (DR-85).
+
 Antes de concluir o marco, confirme: quinze chaves presentes; campos alheios preservados; E4→E3 representado; estado e JSONL abaixo de 1 KB; handoff abaixo de 500 tokens e só com caminhos existentes; stdout do helper vazio.

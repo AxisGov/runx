@@ -587,19 +587,48 @@ def eventos_rastro(raiz, trabalho, reverso=False):
 
 
 
-def _rotaciona(caminho):
+def _grande(caminho):
     try:
-        if os.path.getsize(caminho) < MAX_RASTRO_BYTES:
-            return
+        return os.path.getsize(caminho) >= MAX_RASTRO_BYTES
+    except OSError:
+        return False
+
+
+def _rotaciona(caminho):
+    """Acima do limite, move o rastro para o primeiro `.<n>.jsonl` livre.
+
+    So quem pega a trava (`mkdir` e atomico) rotaciona, e confere o tamanho de
+    novo ja com ela: dois gravadores que viram o arquivo grande escolhiam o mesmo
+    `n`, e o segundo rename movia o arquivo NOVO por cima do segmento, perdendo
+    os eventos antigos. Trava ocupada: ninguem rotaciona, o arquivo so cresce.
+    Nao ha remocao de trava velha, que reabriria a corrida; trava que sobra (o
+    processo morreu entre o mkdir e o rmdir) so deixa o arquivo crescer. Mesmo
+    desenho do escritor do nucleo (expxdev, nucleo/hooks/expx-rastro.sh).
+    """
+    if not _grande(caminho):
+        return
+    pasta, nome = os.path.split(caminho)
+    trava = os.path.join(pasta, f".{nome[:-6]}.rotacao")
+    try:
+        os.mkdir(trava)
     except OSError:
         return
-    n = 1
-    while os.path.exists(f"{caminho[:-6]}.{n}.jsonl"):
-        n += 1
     try:
-        os.rename(caminho, f"{caminho[:-6]}.{n}.jsonl")
-    except OSError:
-        pass
+        if not _grande(caminho):
+            return
+        n = 1
+        # lexists: link simbolico quebrado tambem ocupa o nome
+        while os.path.lexists(f"{caminho[:-6]}.{n}.jsonl"):
+            n += 1
+        try:
+            os.rename(caminho, f"{caminho[:-6]}.{n}.jsonl")
+        except OSError:
+            pass
+    finally:
+        try:
+            os.rmdir(trava)
+        except OSError:
+            pass
 
 
 def grava(evento, *, trabalho, fase=None, task=None, agente="principal",

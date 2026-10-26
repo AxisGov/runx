@@ -32,6 +32,8 @@ PADRAO = {
     "bloqueios": 0,
 }
 TIPOS = {"transicao", "bloqueio", "decisao", "termino"}
+# O OC-ID tem forma fixa (references/01-investigacao.md): OC-<AAAA>-<NNNN>.
+OC_ID = re.compile(r"OC-[0-9]{4}-[0-9]{4}")
 TRANSICOES = {
     ("e1", "e2"), ("e2", "e3"), ("e3", "e1"),
     ("e3", "e4"), ("e4", "e3"), ("e4", "e5"),
@@ -71,6 +73,40 @@ def ler_estado(caminho):
     except (OSError, ValueError):
         pass
     return estado
+
+
+def trabalho_da_ocorrencia(raiz, ocorrencia):
+    """O `trabalho_id` da ocorrencia, conferido; ValueError antes de qualquer escrita.
+
+    A pasta precisa ser filha direta de docs/manutencao/ e existir. O id vem da
+    mesma fonte que `artefatos` le: o ORQUESTRADOR.md, ou, antes do E2, o
+    00-OCORRENCIA.md. Tem de ser um OC-ID completo, e a pasta tem de se chamar
+    `<id>` ou `<id>-<slug>`. Nunca se inventa o id a partir do nome da pasta: o
+    antigo `basename.split("-")[0]` dava "OC" e regravava o estado com ele.
+    """
+    base = os.path.realpath(os.path.join(raiz, "docs", "manutencao"))
+    if os.path.dirname(ocorrencia) != base:
+        raise ValueError("a ocorrencia precisa ser uma pasta de docs/manutencao/")
+    if not os.path.isdir(ocorrencia):
+        raise ValueError("ocorrencia inexistente: %s" % os.path.basename(ocorrencia))
+    fonte = os.path.join(ocorrencia, "ORQUESTRADOR.md")
+    if not os.path.isfile(fonte):
+        fonte = os.path.join(ocorrencia, "00-OCORRENCIA.md")
+    if not os.path.isfile(fonte):
+        raise ValueError("ocorrencia sem ORQUESTRADOR.md nem 00-OCORRENCIA.md")
+    trabalho = R.texto(R.frontmatter(fonte).get("trabalho_id"))
+    if not trabalho or not OC_ID.fullmatch(trabalho):
+        raise ValueError("trabalho_id ausente ou fora da forma OC-AAAA-NNNN em %s" % os.path.basename(fonte))
+    nome = os.path.basename(ocorrencia)
+    if nome != trabalho and not nome.startswith(trabalho + "-"):
+        raise ValueError("a pasta %s nao e da ocorrencia %s" % (nome, trabalho))
+    return trabalho
+
+
+def ocorrencia_aberta(ocorrencia):
+    fm = R.frontmatter(os.path.join(ocorrencia, "ORQUESTRADOR.md"))
+    return not (R.texto(fm.get("status")) == "concluido"
+                or R.texto(fm.get("concluido_em")) not in (None, "", "null"))
 
 
 def artefatos(ocorrencia):
@@ -143,7 +179,7 @@ def planejar_derivado(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, f
     orquestrador = os.path.join(ocorrencia, "ORQUESTRADOR.md")
     fm, tasks, concluidas, corrente, bloqueios = artefatos(ocorrencia)
     fase = fase_forcada or R.texto(fm.get("estagio"))
-    trabalho = R.texto(fm.get("trabalho_id")) or os.path.basename(ocorrencia).split("-")[0]
+    trabalho = trabalho_da_ocorrencia(raiz, ocorrencia)
     titulo = " ".join((R.texto(fm.get("titulo")) or trabalho).split())[:30]
     estado_path = os.path.join(raiz, ".expx", "estado.json")
     estado = ler_estado(estado_path)
@@ -190,30 +226,20 @@ def planejar_derivado(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, f
     return trabalho, fase, []
 
 
-def localizar_ocorrencia_ativa(raiz):
-    estado = ler_estado(os.path.join(raiz, ".expx", "estado.json"))
-    trabalho = R.texto(estado.get("trabalho"))
-    if not trabalho:
-        return None
-    base = os.path.join(raiz, "docs", "manutencao")
-    try:
-        candidatos = [
-            os.path.join(base, nome) for nome in os.listdir(base)
-            if nome == trabalho or nome.startswith(trabalho + "-")
-        ]
-    except OSError:
-        return None
-    candidatos = [p for p in candidatos if os.path.isdir(p)]
-    return candidatos[0] if len(candidatos) == 1 else None
-
-
 def executar(args):
     if args.comando == "session-start":
+        # A ocorrencia sai dos artefatos versionados, como nos demais hooks da
+        # RunX, nunca do `trabalho` do estado.json: o contrato expx-estado o
+        # reserva a exibicao. Encerrada nao e reconstruida (o termino ja zerou o
+        # estado). Recusa da validacao nao trava a sessao: sai 0 sem gravar.
         evento = R.ler_evento()
         raiz = R.raiz_repo(evento.get("cwd") if isinstance(evento, dict) else None)
-        ocorrencia = localizar_ocorrencia_ativa(raiz)
-        if ocorrencia:
-            derivar(raiz, ocorrencia, agora_padrao())
+        ocorrencia = R.pasta_ocorrencia(raiz)
+        if ocorrencia and ocorrencia_aberta(ocorrencia):
+            try:
+                derivar(raiz, os.path.realpath(ocorrencia), agora_padrao())
+            except ValueError as erro:
+                sys.stderr.write("estado.py: %s\n" % erro)
         return 0
 
     raiz = R.raiz_repo()
@@ -232,6 +258,10 @@ def executar(args):
     fm = R.frontmatter(caminho_orquestrador)
     fase_atual = R.texto(fm.get("estagio")) or "e1"
     fase_nova = fase_atual
+    # O termino so existe no E5, o ultimo estagio (references/05-relatorio.md);
+    # em outro estagio ele gravaria `status: concluido` numa ocorrencia aberta.
+    if args.tipo == "termino" and fase_atual != "e5":
+        raise ValueError("termino so no e5 (estagio atual: %s)" % fase_atual)
     if args.tipo == "transicao":
         fase_nova = args.resultado
         if (fase_atual, fase_nova) not in TRANSICOES:
@@ -271,9 +301,12 @@ def parser():
 
 
 def main():
+    # stdout fica vazio sempre (contrato do helper); o motivo da recusa vai ao
+    # stderr, para quem chamou saber o que corrigir.
     try:
         return executar(parser().parse_args())
-    except Exception:
+    except Exception as erro:
+        sys.stderr.write("estado.py: %s\n" % erro)
         return 1
 
 
