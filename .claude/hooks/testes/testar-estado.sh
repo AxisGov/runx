@@ -225,5 +225,89 @@ afirma handoff-grande-marco-nao-avanca "marco recusado pelo handoff não grava o
   bash -c '[ "$1" -ne 0 ] && [ "$2" = "$3" ] && [ "$4" = "$5" ] && [ "$6" = "$7" ]' \
   _ "$grande_marco" "$antes_orq" "$depois_orq" "$depois_estado" "$marco_estado" "$depois_handoff" "$marco_handoff"
 
+# --ocorrencia que nao existe, ou sem trabalho_id valido, nao inventa trabalho:
+# antes, o id saia de basename.split("-")[0] ("OC") e o estado.json era regravado
+# com zero tasks (katosmv/conselhos-municipais#208, M8). Recusa antes de escrever.
+recusa_sem_escrita() { # recusa_sem_escrita <nome> <descricao> <comando...>
+  local nome="$1" desc="$2"; shift 2
+  local ae ah depois_e depois_h erro codigo
+  ae=$(hash_arquivo "$W/.expx/estado.json"); ah=$(hash_arquivo "$W/.expx/handoff.md")
+  (cd "$W" && "$@" >"$T/recusa.out" 2>"$T/recusa.err"); codigo=$?
+  erro="$(cat "$T/recusa.err")"
+  depois_e=$(hash_arquivo "$W/.expx/estado.json"); depois_h=$(hash_arquivo "$W/.expx/handoff.md")
+  # recusa: codigo != 0, nada gravado, stdout vazio e o motivo em stderr com o prefixo do helper
+  afirma "$nome" "$desc" bash -c '[ "$1" -ne 0 ] && [ "$2" = "$3" ] && [ "$4" = "$5" ] && \
+      [ ! -s "$7" ] && case "$6" in "estado.py: "*) true ;; *) false ;; esac' \
+    _ "$codigo" "$ae" "$depois_e" "$ah" "$depois_h" "$erro" "$T/recusa.out"
+}
+FANTASMA="$W/docs/manutencao/OC-2026-0099-fantasma"
+recusa_sem_escrita reconstruir-inexistente "reconstruir com --ocorrencia inexistente recusa sem gravar" \
+  python3 "$HELPER" reconstruir --ocorrencia "$FANTASMA" --agora 2026-10-26T10:00:00Z
+recusa_sem_escrita e1e2-inexistente "transicao e1→e2 com --ocorrencia inexistente recusa sem gravar" \
+  python3 "$HELPER" marco --ocorrencia "$FANTASMA" --tipo transicao --id E1-E2 --resultado e2 --agora 2026-10-26T10:00:00Z
+for caso in sem-id:"" truncado:"OC" outro-oc:"OC-2026-0098"; do
+  nome="${caso%%:*}"; id="${caso#*:}"
+  X="$W/docs/manutencao/OC-2026-0097-$nome"; mkdir -p "$X"
+  { printf -- '---\nexpx_schema: 1\nexpx_tool: runx\nkind: ocorrencia\n'
+    [ -n "$id" ] && printf 'trabalho_id: %s\n' "$id"
+    printf 'titulo: Caso %s\n---\n' "$nome"; } > "$X/00-OCORRENCIA.md"
+  recusa_sem_escrita "id-$nome" "00-OCORRENCIA com trabalho_id $nome recusa sem gravar" \
+    python3 "$HELPER" reconstruir --ocorrencia "$X" --agora 2026-10-26T10:00:00Z
+done
+
+# ORQUESTRADOR presente e sem trabalho_id: ele e a fonte, e o 00-OCORRENCIA valido
+# ao lado nao o substitui.
+X="$W/docs/manutencao/OC-2026-0096-orq-sem-id"; mkdir -p "$X"
+printf -- '---\nexpx_tool: runx\nkind: ocorrencia\ntrabalho_id: OC-2026-0096\n---\n' > "$X/00-OCORRENCIA.md"
+printf -- '---\nexpx_tool: runx\nkind: orquestrador\nestagio: e3\nstatus: em_andamento\nconcluido_em: null\n---\n' > "$X/ORQUESTRADOR.md"
+recusa_sem_escrita orquestrador-sem-id "ORQUESTRADOR sem trabalho_id recusa, mesmo com 00-OCORRENCIA válido" \
+  python3 "$HELPER" reconstruir --ocorrencia "$X" --agora 2026-10-26T10:00:00Z
+# Pasta fora de docs/manutencao/, ainda que com nome e id certos.
+F="$W/docs/outra/OC-2026-0042-cache"; mkdir -p "$F"; cp "$O/ORQUESTRADOR.md" "$F/"
+recusa_sem_escrita fora-de-manutencao "ocorrência fora de docs/manutencao/ recusa sem gravar" \
+  python3 "$HELPER" reconstruir --ocorrencia "$F" --agora 2026-10-26T10:00:00Z
+
+# termino so vale no E5, o ultimo estagio (05-relatorio.md). Antes, era aceito em
+# qualquer estagio e gravava status: concluido (M9).
+TE="$W/docs/manutencao/OC-2026-0045-termino"
+mkdir -p "$TE"
+sed 's/OC-2026-0042/OC-2026-0045/; s/^estagio: .*$/estagio: e3/; s/^status: .*$/status: em_andamento/; s/^concluido_em: .*$/concluido_em: null/' \
+  "$O/ORQUESTRADOR.md" > "$TE/ORQUESTRADOR.md"
+antes_orq=$(hash_arquivo "$TE/ORQUESTRADOR.md")
+recusa_sem_escrita termino-fora-do-e5 "termino no e3 recusa sem gravar estado nem handoff" \
+  python3 "$HELPER" marco --ocorrencia "$TE" --tipo termino --id FIM --resultado ok --agora 2026-10-26T10:00:00Z
+afirma termino-fora-nao-conclui "termino no e3 não toca o ORQUESTRADOR.md" \
+  bash -c '[ "$1" = "$2" ] && ! grep -q "^status: concluido$" "$3"' \
+  _ "$antes_orq" "$(hash_arquivo "$TE/ORQUESTRADOR.md")" "$TE/ORQUESTRADOR.md"
+sed 's/^estagio: e3$/estagio: e5/' "$TE/ORQUESTRADOR.md" > "$TE/ORQUESTRADOR.md.edicao" && mv "$TE/ORQUESTRADOR.md.edicao" "$TE/ORQUESTRADOR.md"
+(cd "$W" && python3 "$HELPER" marco --ocorrencia "$TE" --tipo termino --id FIM --resultado ok \
+  --agora 2026-10-26T10:01:00Z >/dev/null 2>&1); termino_e5=$?
+afirma termino-no-e5 "termino no e5 conclui a ocorrência" \
+  bash -c '[ "$1" -eq 0 ] && grep -q "^status: concluido$" "$2" && grep -q "^concluido_em: 2026-10-26$" "$2"' \
+  _ "$termino_e5" "$TE/ORQUESTRADOR.md"
+
+# SessionStart acha a ocorrencia pelos artefatos versionados, nunca pelo
+# `trabalho` do estado.json (contrato expx-estado: so exibicao).
+S="$T/sessao"; mkdir -p "$S/.expx" "$S/docs/manutencao"; touch "$S/.git"
+mkdir -p "$S/docs/manutencao/OC-2026-0200-real"
+sed 's/OC-2026-0042/OC-2026-0200/' "$O/sprint-01/../ORQUESTRADOR.md" \
+  | sed 's/^status: .*$/status: em_andamento/; s/^concluido_em: .*$/concluido_em: null/; s/^estagio: .*$/estagio: e3/' \
+  > "$S/docs/manutencao/OC-2026-0200-real/ORQUESTRADOR.md"
+printf '%s\n' '{"expx_estado":1,"trabalho":"OC-2026-0999","fase":"e2","tasks_concluidas":0}' > "$S/.expx/estado.json"
+saida_s=$(printf '{"hook_event_name":"SessionStart","cwd":"%s"}' "$S" | (cd "$S" && python3 "$HELPER" session-start) 2>/dev/null); cod_s=$?
+afirma session-start-pelos-artefatos "SessionStart reconstrói a ocorrência versionada, não a do cache" \
+  bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && python3 -c "import json,sys; e=json.load(open(sys.argv[1])); assert e[\"trabalho\"]==\"OC-2026-0200\" and e[\"fase\"]==\"e3\"" "$3/.expx/estado.json"' \
+  _ "$cod_s" "$saida_s" "$S"
+
+# Ocorrencia aberta mas invalida: a sessao segue (exit 0) e nada e gravado.
+I="$T/sessao-invalida"; mkdir -p "$I/.expx" "$I/docs/manutencao/OC-2026-0300-x"; touch "$I/.git"
+printf -- '---\nexpx_tool: runx\nkind: ocorrencia\ntrabalho_id: OC\n---\n' > "$I/docs/manutencao/OC-2026-0300-x/00-OCORRENCIA.md"
+printf '%s\n' '{"expx_estado":1,"trabalho":null}' > "$I/.expx/estado.json"
+antes_i=$(hash_arquivo "$I/.expx/estado.json")
+saida_i=$(printf '{"hook_event_name":"SessionStart","cwd":"%s"}' "$I" | (cd "$I" && python3 "$HELPER" session-start) 2>/dev/null); cod_i=$?
+afirma session-start-recusa-fail-open "SessionStart com ocorrência inválida sai 0, sem stdout e sem gravar" \
+  bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && [ "$3" = "$4" ] && [ ! -e "$5/.expx/handoff.md" ]' \
+  _ "$cod_i" "$saida_i" "$antes_i" "$(hash_arquivo "$I/.expx/estado.json")" "$I"
+
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
