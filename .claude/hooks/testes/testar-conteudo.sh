@@ -380,10 +380,24 @@ afirma e1-branch-nao-rastreia-a-base \
     [ -n "$cmd" ] || exit 1
     d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
     git init -q --bare "$d/o.git"; git clone -q "$d/o.git" "$d/repo" 2>/dev/null; cd "$d/repo" || exit 1
-    git -c user.email=t@t -c user.name=t commit -q --allow-empty -m i; git push -q origin HEAD:refs/heads/main; git fetch -q
+    git -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i || exit 1
+    git -c push.gpgsign=false push -q origin HEAD:refs/heads/main || exit 1; git fetch -q || exit 1
     cmd="${cmd//<branch>/fix/x}"; cmd="${cmd//<repo>--<OC-ID>-<slug>/w}"; cmd="${cmd//<base>/origin/main}"
     eval "$cmd" >/dev/null 2>&1 || exit 1
     ! git -C ../w rev-parse --abbrev-ref "@{u}" >/dev/null 2>&1'
+
+# DR-55 criou os dois eventos, e o rastro.py nunca os aceitou: o comando das referencias saia com rc 2.
+for evento in diagrama_nao_gerado diagrama_nao_atualizado; do
+  afirma "rastro-aceita-$evento" \
+    "o rastro.py grava $evento, como as referencias mandam" \
+    bash -c '
+      d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+      mkdir -p "$d/.claude" "$d/docs/manutencao/OC-2026-0001-sonda"
+      cp -R "'"$R"'/.claude/hooks" "$d/.claude/hooks"
+      printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+      cd "$d" && python3 .claude/hooks/comum/rastro.py --evento '"$evento"' --fase e3 --resultado falha --detalhe x \
+        && grep -q "'"$evento"'" docs/eventos/*.jsonl'
+done
 
 afirma refs-sem-caminho-fixo-de-instalacao \
   "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \
@@ -447,10 +461,13 @@ afirma hooks-nao-deixam-pyc \
     mkdir -p "$d/.claude" "$d/docs/manutencao/OC-2026-0001-sonda"
     cp -R "'"$R"'/.claude/hooks" "$d/.claude/hooks"; find "$d/.claude/hooks" -name __pycache__ -prune -exec rm -rf {} +
     printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
-    cd "$d" && env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/rastro.py --evento task_iniciada --fase e3 --task T-01.01 \
-      && env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/estado.py reconstruir --ocorrencia docs/manutencao/OC-2026-0001-sonda >/dev/null 2>&1
+    cd "$d" || exit 1
+    env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/rastro.py --evento task_iniciada --fase e3 --task T-01.01 || exit 1
+    grep -q T-01.01 docs/eventos/*.jsonl || exit 1
+    env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/estado.py reconstruir --ocorrencia docs/manutencao/OC-2026-0001-sonda >/dev/null 2>&1 || exit 1
     printf "{\"cwd\":\"%s\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/x.py\"}}" "$d" "$d" \
       | env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/despachante.py runx/causa-antes-do-plano runx/escopo-da-ocorrencia runx/task-reivindicada >/dev/null 2>&1
+    case $? in 0|2) ;; *) exit 1 ;; esac
     [ -z "$(find "$d/.claude/hooks" -name __pycache__ -o -name "*.pyc")" ]'
 
 afirma hooks-todos-recusam-pyc \

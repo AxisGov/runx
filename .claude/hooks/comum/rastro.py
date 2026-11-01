@@ -29,6 +29,7 @@ EVENTOS = {
     "veredito_emitido",
     "commit_criado", "pr_aberto",
     "marco_transicao", "marco_bloqueio", "marco_decisao", "marco_termino",
+    "diagrama_nao_gerado", "diagrama_nao_atualizado",
 }
 AGENTES = {
     "principal",
