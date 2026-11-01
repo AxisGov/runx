@@ -374,7 +374,7 @@ afirma marco-evento-mecanico-deterministico \
     && grep -qi "JSONL" "$f" && grep -qi "sem chamada.*LLM" "$f"'
 
 afirma e1-branch-nao-rastreia-a-base \
-  "o comando do E1, como esta escrito, cria a branch de origin/main sem upstream (DR-90)" \
+  "o comando do E1, como esta escrito, de uma subpasta, cria o worktree irmao e sem upstream (DR-90 e DR-92)" \
   bash -c '
     cmd="$(grep -o "git worktree add -b <branch>[^\`]*<base>" "'"$S"'/references/01-investigacao.md" | head -1)"
     [ -n "$cmd" ] || exit 1
@@ -383,8 +383,14 @@ afirma e1-branch-nao-rastreia-a-base \
     git -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i || exit 1
     git -c push.gpgsign=false push -q origin HEAD:refs/heads/main || exit 1; git fetch -q || exit 1
     cmd="${cmd//<branch>/fix/x}"; cmd="${cmd//<repo>--<OC-ID>-<slug>/w}"; cmd="${cmd//<base>/origin/main}"
-    eval "$cmd" >/dev/null 2>&1 || exit 1
-    ! git -C ../w rev-parse --abbrev-ref "@{u}" >/dev/null 2>&1'
+    mkdir -p sub/dir; ( cd sub/dir && eval "$cmd" >/dev/null 2>&1 ) || exit 1
+    [ -d "$d/w" ] || exit 1
+    git -C "$d/w" rev-parse --abbrev-ref "@{u}" >/dev/null 2>&1 && exit 1
+    # De dentro de um worktree em outro lugar, a pasta nova nasce irma do checkout principal.
+    mkdir "$d/longe"; git worktree add -q -b y --no-track "$d/longe/z" origin/main || exit 1
+    cmd2="${cmd//fix\/x/fix/x2}"; cmd2="${cmd2//\/w\"//w2\"}"
+    ( cd "$d/longe/z" && eval "$cmd2" >/dev/null 2>&1 ) || exit 1
+    [ -d "$d/w2" ] && [ ! -e "$d/longe/w2" ]'
 
 # DR-55 criou os dois eventos, e o rastro.py nunca os aceitou: o comando das referencias saia com rc 2.
 for evento in diagrama_nao_gerado diagrama_nao_atualizado; do
@@ -398,6 +404,10 @@ for evento in diagrama_nao_gerado diagrama_nao_atualizado; do
       cd "$d" && python3 .claude/hooks/comum/rastro.py --evento '"$evento"' --fase e3 --resultado falha --detalhe x \
         && grep -q "'"$evento"'" docs/eventos/*.jsonl'
 done
+
+afirma e1-registro-sem-pasta-antes-de-retomar \
+  "o E1 tira só o registro do worktree sem pasta antes de decidir retomar (DR-92)" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove <caminho>\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f"'
 
 afirma refs-sem-caminho-fixo-de-instalacao \
   "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \

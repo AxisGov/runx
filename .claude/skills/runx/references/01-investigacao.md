@@ -110,7 +110,7 @@ Se encontrou outra ocorrência aberta:
 Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). Sem git, ou com "sem worktree" explícito no pedido, `worktree: null` no `00-OCORRENCIA.md` e nada muda no restante do estágio.
 
 1. **Nome da branch e base — copiados da mergex, nunca recalculados do zero:** `fix/<OC-ID>-<slug>` para `tipo: bug`, `chore/<OC-ID>-<slug>` para os demais tipos. Base, nesta ordem, parando na primeira que responder: `docs/stack/CONVENCOES.md` da stackx (seção de versionamento, se marcada e não `PROPOSTA`) → `git symbolic-ref refs/remotes/origin/HEAD` → a branch atual, se for `main`, `master`, `develop` ou equivalente detectada.
-2. **Criar ou retomar.** `git worktree list` já lista um worktree nessa branch → retome nele (não crie outro). Senão: `git worktree add -b <branch> --no-track ../<repo>--<OC-ID>-<slug> <base>`, onde `<repo>` é o nome do diretório do checkout principal. Se a branch já existe mas sem worktree associado: `git worktree add ../<repo>--<OC-ID>-<slug> <branch>`.
+2. **Criar ou retomar.** `git worktree list --porcelain` marca `prunable` no worktree dessa branch quando a pasta sumiu: `git worktree remove <caminho>` tira só esse registro. `git worktree prune` não serve, porque tira também o de worktree movido, que ainda dá para reparar. Depois, `git worktree list` já lista um worktree nessa branch → retome nele (não crie outro). Senão: `git worktree add -b <branch> --no-track "$(git worktree list --porcelain | sed -n '1s/^worktree //p')/../<repo>--<OC-ID>-<slug>" <base>`, a partir do checkout principal, para a pasta nascer irmã dele de qualquer subpasta ou worktree, onde `<repo>` é o nome do diretório do checkout principal. Se a branch já existe mas sem worktree associado: `git worktree add "$(git worktree list --porcelain | sed -n '1s/^worktree //p')/../<repo>--<OC-ID>-<slug>" <branch>`.
 3. **Herdar o local do checkout principal** — lista fechada, copiando só o que existir lá, nunca lendo o conteúdo: `.expx/hooks.json` (mais `estado.json` do objeto padrão de `references/06-estado.md`), `.claude/settings.local.json`, `.env`, `.env.local`, `.env.*.local`.
 4. **Instalar dependências**, para o E1 conseguir rodar teste no worktree novo. Comando do `CONVENCOES.md` da stackx quando existir; senão pelo lockfile encontrado, na primeira ordem que casar:
 
@@ -133,7 +133,7 @@ Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). S
    contrário, use o mecanismo de transição oferecido pelo harness. No Claude
    Code, use `EnterWorktree` com `path` apontando para o diretório criado. Em
    qualquer harness sem transição na própria sessão — OpenCode e MimoCode,
-   inclusive — anuncie um bloco de handoff com **Área de trabalho**,
+   inclusive — anuncie um bloco de handoff com **Área de trabalho** (o caminho absoluto, porque a sessão pode estar em subpasta ou em outro worktree),
    **OC-ID**, **tipo classificado** e **relato literal completo**. Instrua:
    "Abra o harness nesse diretório e reenvie este bloco inteiro para continuar".
    A nova sessão não avança sem receber novamente o relato literal, o ID e o
@@ -141,7 +141,7 @@ Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). S
    mecanismo muda por harness; a máquina de estados e o resultado são os mesmos.
 6. **Criar e registrar, já dentro da árvore correta.** Volte a "Crie o scaffold"
    acima. Depois de criar `00-OCORRENCIA.md` dentro do worktree, grave
-   `worktree: ../<repo>--<OC-ID>-<slug>` e registre no rastro:
+   `worktree: ../<repo>--<OC-ID>-<slug>`, relativo ao checkout principal, e registre no rastro:
    `fase_iniciada --fase e1 --detalhe "worktree ../<repo>--<OC-ID>-<slug>"`.
 
 Toda a pasta `docs/manutencao/<OC-ID>-<slug>/` desta ocorrência vive dentro do worktree a partir daqui; nada dela é gravado no checkout principal.
