@@ -373,6 +373,18 @@ afirma marco-evento-mecanico-deterministico \
   bash -c 'f="'"$S"'/references/06-estado.md"; grep -qi "evento mecânico\|eventos mecânicos" "$f" \
     && grep -qi "JSONL" "$f" && grep -qi "sem chamada.*LLM" "$f"'
 
+afirma e1-branch-nao-rastreia-a-base \
+  "o comando do E1, como esta escrito, cria a branch de origin/main sem upstream (DR-90)" \
+  bash -c '
+    cmd="$(grep -o "git worktree add -b <branch>[^\`]*<base>" "'"$S"'/references/01-investigacao.md" | head -1)"
+    [ -n "$cmd" ] || exit 1
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    git init -q --bare "$d/o.git"; git clone -q "$d/o.git" "$d/repo" 2>/dev/null; cd "$d/repo" || exit 1
+    git -c user.email=t@t -c user.name=t commit -q --allow-empty -m i; git push -q origin HEAD:refs/heads/main; git fetch -q
+    cmd="${cmd//<branch>/fix/x}"; cmd="${cmd//<repo>--<OC-ID>-<slug>/w}"; cmd="${cmd//<base>/origin/main}"
+    eval "$cmd" >/dev/null 2>&1 || exit 1
+    ! git -C ../w rev-parse --abbrev-ref "@{u}" >/dev/null 2>&1'
+
 afirma refs-sem-caminho-fixo-de-instalacao \
   "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \
   bash -c '! grep -rn "python3 \.claude/runx-hooks/" "'"$S"'/references"'
