@@ -6,6 +6,7 @@
 # eventos antigos sumiam. A corrida e reproduzida de forma deterministica: durante o
 # rename do gravador A, um gravador B rotaciona e outro acrescenta um evento.
 set -uo pipefail
+export PYTHONDONTWRITEBYTECODE=1  # a suíte não deixa .pyc na árvore dos hooks (DR-89)
 
 HK="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 T="$(mktemp -d)"

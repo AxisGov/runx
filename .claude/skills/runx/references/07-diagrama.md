@@ -54,7 +54,7 @@ Ao detectar qualquer uma: **pule a geração do bloco**, deixe no lugar do bloco
 e anuncie ao usuário, na conversa, a contradição e a task envolvida. No E2, corrija o plano e regere — o E2 é o lugar de mexer no plano. Registre no rastro:
 
 ```bash
-python3 .claude/runx-hooks/comum/rastro.py --evento diagrama_nao_gerado --fase <e1|e2|e3> \
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento diagrama_nao_gerado --fase <e1|e2|e3> \
   --resultado contradicao --detalhe "<a contradição, uma linha>"
 ```
 
@@ -328,7 +328,7 @@ Se o E2 tiver replanejado (retorno do E4) e o conjunto de tasks tiver mudado, o 
 Se a atualização falhar por qualquer motivo — o bloco não está lá, o arquivo mudou de forma, o nó não foi encontrado — **registre e siga**. A task continua concluída, a suíte continua verde, o estágio continua avançando:
 
 ```bash
-python3 .claude/runx-hooks/comum/rastro.py --evento diagrama_nao_atualizado --fase e3 \
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento diagrama_nao_atualizado --fase e3 \
   --task <T-NN.MM> --resultado falha --detalhe "<o motivo, uma linha>"
 ```
 

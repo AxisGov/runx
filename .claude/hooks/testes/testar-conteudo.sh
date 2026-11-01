@@ -373,5 +373,116 @@ afirma marco-evento-mecanico-deterministico \
   bash -c 'f="'"$S"'/references/06-estado.md"; grep -qi "evento mecânico\|eventos mecânicos" "$f" \
     && grep -qi "JSONL" "$f" && grep -qi "sem chamada.*LLM" "$f"'
 
+afirma e1-branch-nao-rastreia-a-base \
+  "o comando do E1, como esta escrito, cria a branch de origin/main sem upstream (DR-90)" \
+  bash -c '
+    cmd="$(grep -o "git worktree add -b <branch>[^\`]*<base>" "'"$S"'/references/01-investigacao.md" | head -1)"
+    [ -n "$cmd" ] || exit 1
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    git init -q --bare "$d/o.git"; git clone -q "$d/o.git" "$d/repo" 2>/dev/null; cd "$d/repo" || exit 1
+    git -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i || exit 1
+    git -c push.gpgsign=false push -q origin HEAD:refs/heads/main || exit 1; git fetch -q || exit 1
+    cmd="${cmd//<branch>/fix/x}"; cmd="${cmd//<repo>--<OC-ID>-<slug>/w}"; cmd="${cmd//<base>/origin/main}"
+    eval "$cmd" >/dev/null 2>&1 || exit 1
+    ! git -C ../w rev-parse --abbrev-ref "@{u}" >/dev/null 2>&1'
+
+# DR-55 criou os dois eventos, e o rastro.py nunca os aceitou: o comando das referencias saia com rc 2.
+for evento in diagrama_nao_gerado diagrama_nao_atualizado; do
+  afirma "rastro-aceita-$evento" \
+    "o rastro.py grava $evento, como as referencias mandam" \
+    bash -c '
+      d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+      mkdir -p "$d/.claude" "$d/docs/manutencao/OC-2026-0001-sonda"
+      cp -R "'"$R"'/.claude/hooks" "$d/.claude/hooks"
+      printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+      cd "$d" && python3 .claude/hooks/comum/rastro.py --evento '"$evento"' --fase e3 --resultado falha --detalhe x \
+        && grep -q "'"$evento"'" docs/eventos/*.jsonl'
+done
+
+afirma refs-sem-caminho-fixo-de-instalacao \
+  "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \
+  bash -c '! grep -rn "python3 \.claude/runx-hooks/" "'"$S"'/references"'
+
+afirma refs-todos-os-comandos-valem \
+  "os 14 comandos, inclusive os de varias linhas, tem o prefixo inteiro, sintaxe valida e script existente" \
+  python3 -c '
+import re, subprocess, sys
+from pathlib import Path
+s = Path(sys.argv[1]); total = 0
+PRE = "H=.claude/runx-hooks; [ -f \"$H/comum/expx_rastro.py\" ] || H=.claude/hooks; python3 \"$H/comum/"
+for ref in sorted((s / "references").glob("*.md")):
+    linhas = ref.read_text(encoding="utf-8").split("\n")
+    for i, l in enumerate(linhas):
+        m = re.search(r"H=\.claude/runx-hooks.*", l)
+        if not m: continue
+        total += 1
+        cmd = m.group(0).split("`")[0]
+        j = i
+        while cmd.rstrip().endswith("\\"):
+            j += 1; cmd = cmd.rstrip()[:-1] + " " + linhas[j].strip()
+        cmd = re.sub(r"<[^>]*>", "x", cmd)
+        nome = re.search(r"\$H/comum/([a-z_]+\.py)", cmd)
+        assert cmd.startswith(PRE) and nome, (ref.name, i + 1, cmd)
+        assert (s.parent.parent / "hooks" / "comum" / nome.group(1)).is_file(), (ref.name, nome.group(1))
+        r = subprocess.run(["bash", "-n", "-c", cmd], capture_output=True, text=True)
+        assert r.returncode == 0, (ref.name, i + 1, r.stderr)
+assert total == 14, total
+' "$S"
+
+# O comando escrito na referencia, executado como esta, nas duas formas de instalacao: o
+# install.sh grava em .claude/runx-hooks, e o expx init, em .claude/hooks (DR-88).
+afirma refs-pasta-incompleta-cai-no-outro-destino \
+  "com .claude/runx-hooks sem a biblioteca, o comando usa .claude/hooks" \
+  bash -c '
+    cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    mkdir -p "$d/.claude/runx-hooks" "$d/.claude/hooks" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d" && bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
+
+for destino in runx-hooks hooks; do
+  afirma "refs-comando-roda-em-$destino" \
+    "o task_iniciada de 03-fix.md grava o rastro com os hooks em .claude/$destino" \
+    bash -c '
+      cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
+      d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+      mkdir -p "$d/.claude/'"$destino"'" "$d/docs/manutencao/OC-2026-0001-sonda"
+      cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/'"$destino"'/"
+      printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+      cd "$d" && bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
+done
+
+# Instalada pelo expx init, a arvore e versionada no projeto, e um .pyc nela vira desvio no E1 (DR-89).
+afirma hooks-nao-deixam-pyc \
+  "o rastro, o estado e o despachante rodam sem criar __pycache__" \
+  bash -c '
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    mkdir -p "$d/.claude" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks" "$d/.claude/hooks"; find "$d/.claude/hooks" -name __pycache__ -prune -exec rm -rf {} +
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d" || exit 1
+    env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/rastro.py --evento task_iniciada --fase e3 --task T-01.01 || exit 1
+    grep -q T-01.01 docs/eventos/*.jsonl || exit 1
+    env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/estado.py reconstruir --ocorrencia docs/manutencao/OC-2026-0001-sonda >/dev/null 2>&1 || exit 1
+    printf "{\"cwd\":\"%s\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/x.py\"}}" "$d" "$d" \
+      | env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/despachante.py runx/causa-antes-do-plano runx/escopo-da-ocorrencia runx/task-reivindicada >/dev/null 2>&1
+    case $? in 0|2) ;; *) exit 1 ;; esac
+    [ -z "$(find "$d/.claude/hooks" -name __pycache__ -o -name "*.pyc")" ]'
+
+afirma hooks-todos-recusam-pyc \
+  "todo ponto de entrada Python dos hooks liga dont_write_bytecode antes de importar a biblioteca" \
+  python3 -c '
+import sys
+from pathlib import Path
+raiz = Path(sys.argv[1]) / ".claude" / "hooks"
+for f in list((raiz / "comum").glob("*.py")) + list((raiz / "runx").glob("*.py")):
+    if f.name == "expx_rastro.py": continue
+    t = f.read_text(encoding="utf-8"); i = t.find("sys.dont_write_bytecode = True")
+    assert i >= 0, f.name
+    j = t.find("import expx_rastro")
+    assert j < 0 or i < j, f.name
+' "$R"
+
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]

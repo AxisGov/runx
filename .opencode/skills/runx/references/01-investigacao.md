@@ -25,8 +25,8 @@ Se o agente devolver `comprovada: false`, **respeite**: grave assim, com `STATUS
 Registre no rastro ao delegar e ao receber:
 
 ```
-python3 .claude/runx-hooks/comum/rastro.py --evento agente_iniciado  --agente runx-investigador --fase e1
-python3 .claude/runx-hooks/comum/rastro.py --evento agente_concluido --agente runx-investigador --fase e1 \
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento agente_iniciado  --agente runx-investigador --fase e1
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento agente_concluido --agente runx-investigador --fase e1 \
   --resultado <comprovada|nao_comprovada|impacto_mapeado> --detalhe "N arquivos de base, M lacunas"
 ```
 
@@ -110,7 +110,7 @@ Se encontrou outra ocorrência aberta:
 Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). Sem git, ou com "sem worktree" explícito no pedido, `worktree: null` no `00-OCORRENCIA.md` e nada muda no restante do estágio.
 
 1. **Nome da branch e base — copiados da mergex, nunca recalculados do zero:** `fix/<OC-ID>-<slug>` para `tipo: bug`, `chore/<OC-ID>-<slug>` para os demais tipos. Base, nesta ordem, parando na primeira que responder: `docs/stack/CONVENCOES.md` da stackx (seção de versionamento, se marcada e não `PROPOSTA`) → `git symbolic-ref refs/remotes/origin/HEAD` → a branch atual, se for `main`, `master`, `develop` ou equivalente detectada.
-2. **Criar ou retomar.** `git worktree list` já lista um worktree nessa branch → retome nele (não crie outro). Senão: `git worktree add -b <branch> ../<repo>--<OC-ID>-<slug> <base>`, onde `<repo>` é o nome do diretório do checkout principal. Se a branch já existe mas sem worktree associado: `git worktree add ../<repo>--<OC-ID>-<slug> <branch>`.
+2. **Criar ou retomar.** `git worktree list` já lista um worktree nessa branch → retome nele (não crie outro). Senão: `git worktree add -b <branch> --no-track ../<repo>--<OC-ID>-<slug> <base>`, onde `<repo>` é o nome do diretório do checkout principal. Se a branch já existe mas sem worktree associado: `git worktree add ../<repo>--<OC-ID>-<slug> <branch>`.
 3. **Herdar o local do checkout principal** — lista fechada, copiando só o que existir lá, nunca lendo o conteúdo: `.expx/hooks.json` (mais `estado.json` do objeto padrão de `references/06-estado.md`), `.claude/settings.local.json`, `.env`, `.env.local`, `.env.*.local`.
 4. **Instalar dependências**, para o E1 conseguir rodar teste no worktree novo. Comando do `CONVENCOES.md` da stackx quando existir; senão pelo lockfile encontrado, na primeira ordem que casar:
 
