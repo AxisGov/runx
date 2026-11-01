@@ -405,9 +405,9 @@ for evento in diagrama_nao_gerado diagrama_nao_atualizado; do
         && grep -q "'"$evento"'" docs/eventos/*.jsonl'
 done
 
-afirma e1-prune-antes-de-retomar \
-  "o E1 tira o registro de worktree sem pasta antes de decidir retomar (DR-92)" \
-  bash -c 'grep -q "\`git worktree prune\` tira o registro" "'"$S"'/references/01-investigacao.md"'
+afirma e1-registro-sem-pasta-antes-de-retomar \
+  "o E1 tira só o registro do worktree sem pasta antes de decidir retomar (DR-92)" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove <caminho>\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f"'
 
 afirma refs-sem-caminho-fixo-de-instalacao \
   "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \
