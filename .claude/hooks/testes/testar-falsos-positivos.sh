@@ -3,6 +3,7 @@
 # funcionavam. Este banco fixa os casos que ja deram errado uma vez, para que
 # nao voltem em silencio.
 set -uo pipefail
+export PYTHONDONTWRITEBYTECODE=1  # a suíte não deixa .pyc na árvore dos hooks (DR-89)
 
 H="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ok=0; falhou=0

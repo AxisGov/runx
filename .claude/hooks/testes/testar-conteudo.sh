@@ -383,7 +383,7 @@ afirma refs-todos-os-comandos-valem \
 import re, subprocess, sys
 from pathlib import Path
 s = Path(sys.argv[1]); total = 0
-PRE = "H=.claude/runx-hooks; [ -d \"$H\" ] || H=.claude/hooks; python3 \"$H/comum/"
+PRE = "H=.claude/runx-hooks; [ -f \"$H/comum/expx_rastro.py\" ] || H=.claude/hooks; python3 \"$H/comum/"
 for ref in sorted((s / "references").glob("*.md")):
     linhas = ref.read_text(encoding="utf-8").split("\n")
     for i, l in enumerate(linhas):
@@ -405,6 +405,16 @@ assert total == 14, total
 
 # O comando escrito na referencia, executado como esta, nas duas formas de instalacao: o
 # install.sh grava em .claude/runx-hooks, e o expx init, em .claude/hooks (DR-88).
+afirma refs-pasta-incompleta-cai-no-outro-destino \
+  "com .claude/runx-hooks sem a biblioteca, o comando usa .claude/hooks" \
+  bash -c '
+    cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    mkdir -p "$d/.claude/runx-hooks" "$d/.claude/hooks" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d" && bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
+
 for destino in runx-hooks hooks; do
   afirma "refs-comando-roda-em-$destino" \
     "o task_iniciada de 03-fix.md grava o rastro com os hooks em .claude/$destino" \
@@ -416,6 +426,34 @@ for destino in runx-hooks hooks; do
       printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
       cd "$d" && bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
 done
+
+# Instalada pelo expx init, a arvore e versionada no projeto, e um .pyc nela vira desvio no E1 (DR-89).
+afirma hooks-nao-deixam-pyc \
+  "o rastro, o estado e o despachante rodam sem criar __pycache__" \
+  bash -c '
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    mkdir -p "$d/.claude" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks" "$d/.claude/hooks"; find "$d/.claude/hooks" -name __pycache__ -prune -exec rm -rf {} +
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d" && env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/rastro.py --evento task_iniciada --fase e3 --task T-01.01 \
+      && env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/estado.py reconstruir --ocorrencia docs/manutencao/OC-2026-0001-sonda >/dev/null 2>&1
+    printf "{\"cwd\":\"%s\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/x.py\"}}" "$d" "$d" \
+      | env -u PYTHONDONTWRITEBYTECODE python3 .claude/hooks/comum/despachante.py runx/causa-antes-do-plano runx/escopo-da-ocorrencia runx/task-reivindicada >/dev/null 2>&1
+    [ -z "$(find "$d/.claude/hooks" -name __pycache__ -o -name "*.pyc")" ]'
+
+afirma hooks-todos-recusam-pyc \
+  "todo ponto de entrada Python dos hooks liga dont_write_bytecode antes de importar a biblioteca" \
+  python3 -c '
+import sys
+from pathlib import Path
+raiz = Path(sys.argv[1]) / ".claude" / "hooks"
+for f in list((raiz / "comum").glob("*.py")) + list((raiz / "runx").glob("*.py")):
+    if f.name == "expx_rastro.py": continue
+    t = f.read_text(encoding="utf-8"); i = t.find("sys.dont_write_bytecode = True")
+    assert i >= 0, f.name
+    j = t.find("import expx_rastro")
+    assert j < 0 or i < j, f.name
+' "$R"
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]

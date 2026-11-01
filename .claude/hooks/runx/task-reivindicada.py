@@ -19,6 +19,7 @@ import os
 import sys
 
 _AQUI = os.path.dirname(os.path.abspath(__file__))
+sys.dont_write_bytecode = True  # o __pycache__ viraria desvio no E1 da mergex
 sys.path.insert(0, os.path.join(_AQUI, "..", "comum"))
 import expx_rastro as R  # noqa: E402
 

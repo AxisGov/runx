@@ -21,6 +21,8 @@ import io
 import os
 import sys
 
+sys.dont_write_bytecode = True  # o __pycache__ viraria desvio no E1 da mergex
+
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 

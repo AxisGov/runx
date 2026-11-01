@@ -49,7 +49,7 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
 1. Marque `status: em_andamento` em `tasks.md`, e grave `task` com o id dela em `.expx/estado.json` (`references/06-estado.md`). Registre no rastro:
 
    ```
-   H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento task_iniciada --fase e3 --task <T-NN.MM>
+   H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento task_iniciada --fase e3 --task <T-NN.MM>
    ```
 2. **Escreva o teste. Rode. Ele TEM que falhar.** Nenhuma linha de implementação antes de ver o vermelho. Na primeira task da primeira fase, este é o `teste_regressao`: o teste que reproduz o problema.
 3. **Implemente o mínimo para o teste passar.** Mínimo é literal: só o que faz o vermelho virar verde. Nada de refactor de brinde, nada de "já que estou aqui" — aplique o invariante 5 do `SKILL.md`.
@@ -72,14 +72,14 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
    Registre no rastro:
 
    ```
-   H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento veredito_emitido --agente runx-revisor-testes \
+   H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento veredito_emitido --agente runx-revisor-testes \
      --fase e3 --task <T-NN.MM> --resultado <discriminam|nao_discriminam> --detalhe "N achados"
    ```
 7. Verifique **de fato** o `criterio_aceite` da task — não presuma que ele decorre do teste verde.
 8. Só então marque `status: concluida` em `tasks.md` — **no frontmatter e na prosa** — acrescentando na linha da task: data (obtenha com `date +%Y-%m-%d` do sistema, nunca de memória) e resultado da suíte. No YAML, isso significa `status: concluida`, `concluida_em` com a data e `suite: parcial` (ou `verde`, se você rodou a suíte inteira), mais `atualizado_em` reescrito. Em seguida grave em `.expx/estado.json` (`references/06-estado.md`) o novo `tasks_concluidas` e o `task` da próxima task a ser aberta — `null` quando não houver próxima. Registre no rastro:
 
    ```
-   H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento task_concluida --fase e3 --task <T-NN.MM>
+   H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento task_concluida --fase e3 --task <T-NN.MM>
    ```
 
 Critério de aceite não atendido, ou qualquer teste não passando: a task **NÃO** é concluída. **Não existe "concluído com ressalva".**
@@ -93,7 +93,7 @@ Isso vale nas duas transições da task: ao marcá-la `em_andamento` no passo 1,
 **Falha na atualização é registrada e ignorada.** Se o bloco não estiver lá, se o nó não for encontrado, se o arquivo tiver outra forma: a task continua concluída, a suíte continua verde e o estágio continua avançando. A regra normativa do diagrama fica em `references/07-diagrama.md`:
 
 ```
-H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento diagrama_nao_atualizado --fase e3 \
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento diagrama_nao_atualizado --fase e3 \
   --task <T-NN.MM> --resultado falha --detalhe "<o motivo, uma linha>"
 ```
 
@@ -113,7 +113,7 @@ Nos dois casos: **PARE a execução, volte ao E1** e registre isso. Escreva no `
 Surgiu dúvida nova, decisão não coberta pelo plano, pré-requisito faltando (segredo inexistente, serviço fora do ar, dependência quebrada, dado de produção indisponível):
 
 1. Registre em `docs/manutencao/<OC-ID>-<slug>/BLOQUEIOS.md`: `B-NN | task | descrição do bloqueio | o que destravaria`.
-2. Marque a task como `status: bloqueada` em `tasks.md`. Registre no rastro: `H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento task_bloqueada --fase e3 --task <T-NN.MM> --detalhe "<motivo, uma linha>"`.
+2. Marque a task como `status: bloqueada` em `tasks.md`. Registre no rastro: `H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento task_bloqueada --fase e3 --task <T-NN.MM> --detalhe "<motivo, uma linha>"`.
 3. Grave `bloqueios` em `.expx/estado.json` (`references/06-estado.md`) com a contagem de bloqueios **em aberto**. Ao resolver um bloqueio depois, grave a contagem nova.
 4. Pule para a próxima task paralelizável cujas dependências estão satisfeitas.
 5. **NUNCA pare para esperar resposta humana.** Se não resta nenhuma task executável, encerre com o relatório final — os bloqueios são a pauta do usuário, não uma conversa sua.

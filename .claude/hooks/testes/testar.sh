@@ -2,6 +2,7 @@
 # Banco de casos dos hooks do runx. Monta uma ocorrencia de mentira em /tmp e
 # roda cada hook contra ela, conferindo o codigo de saida esperado.
 set -uo pipefail
+export PYTHONDONTWRITEBYTECODE=1  # a suíte não deixa .pyc na árvore dos hooks (DR-89)
 
 H="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 W="$(mktemp -d)"

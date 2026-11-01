@@ -92,8 +92,8 @@ consolida os contadores na abertura ou no próximo marco.
 Use o helper instalado, que não produz stdout:
 
 ```bash
-H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/estado.py" reconstruir --ocorrencia docs/manutencao/<OC-ID>-<slug>
-H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/estado.py" marco --ocorrencia docs/manutencao/<OC-ID>-<slug> \
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/estado.py" reconstruir --ocorrencia docs/manutencao/<OC-ID>-<slug>
+H=.claude/runx-hooks; [ -f "$H/comum/expx_rastro.py" ] || H=.claude/hooks; python3 "$H/comum/estado.py" marco --ocorrencia docs/manutencao/<OC-ID>-<slug> \
   --tipo <transicao|bloqueio|decisao|termino> --id <identificador> --resultado <resultado>
 ```
 
