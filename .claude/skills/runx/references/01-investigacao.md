@@ -25,8 +25,8 @@ Se o agente devolver `comprovada: false`, **respeite**: grave assim, com `STATUS
 Registre no rastro ao delegar e ao receber:
 
 ```
-python3 .claude/runx-hooks/comum/rastro.py --evento agente_iniciado  --agente runx-investigador --fase e1
-python3 .claude/runx-hooks/comum/rastro.py --evento agente_concluido --agente runx-investigador --fase e1 \
+H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento agente_iniciado  --agente runx-investigador --fase e1
+H=.claude/runx-hooks; [ -d "$H" ] || H=.claude/hooks; python3 "$H/comum/rastro.py" --evento agente_concluido --agente runx-investigador --fase e1 \
   --resultado <comprovada|nao_comprovada|impacto_mapeado> --detalhe "N arquivos de base, M lacunas"
 ```
 

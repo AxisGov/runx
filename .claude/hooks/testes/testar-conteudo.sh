@@ -373,5 +373,49 @@ afirma marco-evento-mecanico-deterministico \
   bash -c 'f="'"$S"'/references/06-estado.md"; grep -qi "evento mecânico\|eventos mecânicos" "$f" \
     && grep -qi "JSONL" "$f" && grep -qi "sem chamada.*LLM" "$f"'
 
+afirma refs-sem-caminho-fixo-de-instalacao \
+  "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \
+  bash -c '! grep -rn "python3 \.claude/runx-hooks/" "'"$S"'/references"'
+
+afirma refs-todos-os-comandos-valem \
+  "os 14 comandos, inclusive os de varias linhas, tem o prefixo inteiro, sintaxe valida e script existente" \
+  python3 -c '
+import re, subprocess, sys
+from pathlib import Path
+s = Path(sys.argv[1]); total = 0
+PRE = "H=.claude/runx-hooks; [ -d \"$H\" ] || H=.claude/hooks; python3 \"$H/comum/"
+for ref in sorted((s / "references").glob("*.md")):
+    linhas = ref.read_text(encoding="utf-8").split("\n")
+    for i, l in enumerate(linhas):
+        m = re.search(r"H=\.claude/runx-hooks.*", l)
+        if not m: continue
+        total += 1
+        cmd = m.group(0).split("`")[0]
+        j = i
+        while cmd.rstrip().endswith("\\"):
+            j += 1; cmd = cmd.rstrip()[:-1] + " " + linhas[j].strip()
+        cmd = re.sub(r"<[^>]*>", "x", cmd)
+        nome = re.search(r"\$H/comum/([a-z_]+\.py)", cmd)
+        assert cmd.startswith(PRE) and nome, (ref.name, i + 1, cmd)
+        assert (s.parent.parent / "hooks" / "comum" / nome.group(1)).is_file(), (ref.name, nome.group(1))
+        r = subprocess.run(["bash", "-n", "-c", cmd], capture_output=True, text=True)
+        assert r.returncode == 0, (ref.name, i + 1, r.stderr)
+assert total == 14, total
+' "$S"
+
+# O comando escrito na referencia, executado como esta, nas duas formas de instalacao: o
+# install.sh grava em .claude/runx-hooks, e o expx init, em .claude/hooks (DR-88).
+for destino in runx-hooks hooks; do
+  afirma "refs-comando-roda-em-$destino" \
+    "o task_iniciada de 03-fix.md grava o rastro com os hooks em .claude/$destino" \
+    bash -c '
+      cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
+      d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+      mkdir -p "$d/.claude/'"$destino"'" "$d/docs/manutencao/OC-2026-0001-sonda"
+      cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/'"$destino"'/"
+      printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+      cd "$d" && bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
+done
+
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
