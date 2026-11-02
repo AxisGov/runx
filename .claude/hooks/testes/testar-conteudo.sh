@@ -451,11 +451,11 @@ afirma refs-todos-os-comandos-valem \
 import re, subprocess, sys
 from pathlib import Path
 s = Path(sys.argv[1]); total = 0
-PRE = "H=.claude/runx-hooks; [ -f \"$H/comum/expx_rastro.py\" ] || H=.claude/hooks; python3 \"$H/comum/"
+PRE = "RX=\"$(git rev-parse --show-toplevel)\" || RX=.; H=\"$RX/.claude/runx-hooks\"; [ -f \"$H/comum/expx_rastro.py\" ] || H=\"$RX/.claude/hooks\"; python3 \"$H/comum/"
 for ref in sorted((s / "references").glob("*.md")):
     linhas = ref.read_text(encoding="utf-8").split("\n")
     for i, l in enumerate(linhas):
-        m = re.search(r"H=\.claude/runx-hooks.*", l)
+        m = re.search(r"RX=\"\$\(git rev-parse --show-toplevel\)\".*", l)
         if not m: continue
         total += 1
         cmd = m.group(0).split("`")[0]
@@ -494,6 +494,29 @@ for destino in runx-hooks hooks; do
       printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
       cd "$d" && bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
 done
+
+# A sessao pode estar numa subpasta do projeto: o caminho dos hooks parte da raiz do Git, e
+# fora de um repositorio cai na pasta atual, como antes (DR-97).
+afirma refs-comando-roda-de-subpasta \
+  "o task_iniciada de 03-fix.md grava o rastro chamado de uma subpasta do projeto" \
+  bash -c '
+    cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    git init -q "$d" || exit 1
+    mkdir -p "$d/.claude/hooks" "$d/src/modulo" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d/src/modulo" && bash -c "$cmd" && grep -q "T-01.01" "$d"/docs/eventos/*.jsonl'
+
+afirma refs-comando-roda-fora-de-git \
+  "fora de um repositorio Git, o comando usa os hooks da pasta atual" \
+  bash -c '
+    cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    mkdir -p "$d/.claude/hooks" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d" && GIT_CEILING_DIRECTORIES="$(dirname "$d")" bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
 
 # Instalada pelo expx init, a arvore e versionada no projeto, e um .pyc nela vira desvio no E1 (DR-89).
 afirma hooks-nao-deixam-pyc \
