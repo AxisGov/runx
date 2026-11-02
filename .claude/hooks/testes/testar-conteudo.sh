@@ -406,8 +406,21 @@ for evento in diagrama_nao_gerado diagrama_nao_atualizado; do
 done
 
 afirma e1-registro-sem-pasta-antes-de-retomar \
-  "o E1 tira só o registro do worktree sem pasta antes de decidir retomar (DR-92)" \
-  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove <caminho>\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f"'
+  "no registro prunable, o E1 pergunta antes de remover: apagada sai, movida se repara (DR-92 e DR-93)" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove <caminho>\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f" \
+    && grep -q "pare e pergunte. Movida: \`git worktree repair <novo caminho>\`, e retome lá. Apagada:" "$f"'
+
+afirma e1-worktree-movido-so-se-repara-antes-de-remover \
+  "worktree movido volta com repair, e depois do remove ja nao volta (DR-93)" \
+  bash -c '
+    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    git init -q "$d/r"; git -C "$d/r" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i || exit 1
+    git -C "$d/r" worktree add -q -b a "$d/a" && git -C "$d/r" worktree add -q -b b "$d/b" || exit 1
+    mv "$d/a" "$d/a2"; mv "$d/b" "$d/b2"
+    git -C "$d/r" worktree list --porcelain | grep -q "^prunable" || exit 1
+    git -C "$d/r" worktree repair "$d/a2" >/dev/null 2>&1; git -C "$d/a2" status >/dev/null 2>&1 || exit 1
+    git -C "$d/r" worktree remove "$d/b" || exit 1
+    ! git -C "$d/b2" status >/dev/null 2>&1'
 
 afirma refs-sem-caminho-fixo-de-instalacao \
   "nenhuma referencia chama o rastro ou o estado so pelo caminho do install.sh" \
