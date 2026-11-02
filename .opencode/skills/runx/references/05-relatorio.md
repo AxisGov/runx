@@ -10,12 +10,12 @@ Você está no E5, o último estágio. Você grava os dois relatórios, atualiza
 
 ## Passo 0 — Provar o merge e abrir a área do fechamento
 
-Só com entrega da mergex, isto é, com `docs/entregas/<OC-ID>-<slug>/ENTREGA.md`. Sem ela, não há PR para provar: siga para o Passo 1 na árvore atual. Com ela e sem `.claude/skills/mergex/scripts/fechamento-pos-merge.sh`, a instalação está incompleta: PARE e diga isso.
+Só com entrega da mergex, isto é, com `docs/entregas/<OC-ID>-<slug>/ENTREGA.md` na raiz do repositório (`git rev-parse --show-toplevel`). Sem ela, não há PR para provar: siga para o Passo 1 na árvore atual. Com ela e sem `.claude/skills/mergex/scripts/fechamento-pos-merge.sh` nessa raiz, a instalação está incompleta: PARE e diga isso.
 
 Antes de gravar qualquer coisa, rode:
 
 ```bash
-bash .claude/skills/mergex/scripts/fechamento-pos-merge.sh --trabalho <OC-ID>-<slug>
+bash "$(git rev-parse --show-toplevel)/.claude/skills/mergex/scripts/fechamento-pos-merge.sh" --trabalho <OC-ID>-<slug>
 ```
 
 - **rc 0:** a saída traz `worktree=`, `branch=`, `merge=` e `pr=`. Entre nesse worktree pelo mecanismo do harness, como no item 5 do Passo 0.b do E1, e siga dali.
