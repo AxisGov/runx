@@ -8,6 +8,22 @@ Você está no E5, o último estágio. Você grava os dois relatórios, atualiza
 - Se contém `VEREDITO: REPROVADO`, PARE: volte para o E3 (`references/03-fix.md`). Ocorrência reprovada não fecha.
 - Se `QA.md` não existe, falta o E4: diga "Falta o E4 (QA)." e execute `references/04-qa.md`.
 
+## Passo 0 — Provar o merge e abrir a área do fechamento
+
+Só com entrega da mergex: `docs/entregas/<OC-ID>-<slug>/ENTREGA.md` e `.claude/skills/mergex/scripts/fechamento-pos-merge.sh` existem. Sem eles, não há PR para provar: siga para o Passo 1 na árvore atual.
+
+Antes de gravar qualquer coisa, rode:
+
+```bash
+bash .claude/skills/mergex/scripts/fechamento-pos-merge.sh --trabalho <OC-ID>-<slug>
+```
+
+- **rc 0:** a saída traz `worktree=`, `branch=`, `merge=` e `pr=`. Entre nesse worktree pelo mecanismo do harness, como no item 5 do Passo 0.b do E1, e siga dali.
+- **rc 4:** o PR ainda não foi mesclado. PARE: a ocorrência não fecha. Diga que o E5 roda depois do merge, e não grave relatório, índice nem estado.
+- **Qualquer outro rc:** o merge não foi provado. PARE e mostre a mensagem. Fechar sem essa prova é decisão da pessoa, não sua.
+
+Nunca faça merge aqui, e nunca chame nem sugira o `/mergex-revisar`.
+
 ## Passo 1 — Criar a pasta do relatório
 
 Obtenha a data de fechamento com `date +%Y-%m-%d` do sistema, nunca de memória. Crie:
@@ -101,6 +117,8 @@ A reindexação acontece **depois** de `tecnico.md`, `uso.md` e `INDICE.md` esta
 
 O deploy é externo: runx **registra** que a correção está liberada, não executa o deploy. Se o usuário informar que o deploy foi feito, registre isso em uma linha no `tecnico.md`, seção "O que observar em produção".
 
+**Com o Passo 0:** commite só `ORQUESTRADOR.md`, `tecnico.md`, `uso.md` e `docs/relatorios/INDICE.md`, sem tocar `ENTREGA.md`: `pr_estado` segue com o E9 ou com uma pessoa. A mensagem leva os trailers `Fechamento-de: <pr>` e `Merge: <merge>`, com os valores da saída do script. Envie a branch com `git push -u origin <branch>` e abra o PR com os dois valores no corpo. O merge desse PR é humano.
+
 ## Critério de saída do estágio
 
 - [ ] `docs/relatorios/<AAAA-MM-DD>-<OC-ID>-<slug>/tecnico.md` existe com as 12 seções.
@@ -112,6 +130,7 @@ O deploy é externo: runx **registra** que a correção está liberada, não exe
 - [ ] A reindexação do `memox` foi disparada, ou o passo foi pulado por ela não estar instalada.
 - [ ] `.expx/estado.json` gravado com `trabalho`, `fase` e `task` em `null`, e o arquivo continua existindo — ou o projeto não tem `.expx/` e nada foi criado.
 - [ ] Nada em `docs/manutencao/` foi apagado ou movido.
+- [ ] Com entrega da mergex, o Passo 0 deu rc 0 e o PR de fechamento foi aberto com os trailers; ou a pessoa decidiu fechar sem a prova.
 
 ## Quando o critério não é atendido
 
@@ -119,4 +138,4 @@ Complete o que falta neste estágio. Se o `uso.md` não passa no teste de lingua
 
 ## Ao terminar
 
-Anuncie: "E5 concluído. Ocorrência `<OC-ID>` encerrada. Relatórios em `docs/relatorios/<AAAA-MM-DD>-<OC-ID>-<slug>/` e `INDICE.md` atualizado." Entregue ao usuário, na conversa, o conteúdo do `uso.md` — é o texto que o suporte vai enviar ao cliente.
+Anuncie: "E5 concluído. Ocorrência `<OC-ID>` encerrada. Relatórios em `docs/relatorios/<AAAA-MM-DD>-<OC-ID>-<slug>/` e `INDICE.md` atualizado.", mais o link do PR de fechamento, quando houver. Entregue ao usuário, na conversa, o conteúdo do `uso.md` — é o texto que o suporte vai enviar ao cliente.

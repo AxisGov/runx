@@ -408,7 +408,18 @@ done
 afirma e1-registro-sem-pasta-antes-de-retomar \
   "no registro prunable, o E1 pergunta antes de remover: apagada sai, movida se repara (DR-92 e DR-93)" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove <caminho>\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f" \
-    && grep -q "pare e pergunte. Pasta movida: \`git worktree repair <novo caminho>\`, e retome lá, com esse caminho na chave \`worktree\`. Pasta apagada:" "$f"'
+    && grep -q "pare e pergunte. Pasta movida: \`git worktree repair <novo caminho>\`, e retome lá, com esse caminho, relativo ao checkout principal, na chave \`worktree\`. Pasta apagada:" "$f"'
+
+afirma e5-so-fecha-com-o-merge-provado \
+  "o E5 prova o merge antes de gravar, para no rc 4, e commita sem tocar a ENTREGA (DR-94)" \
+  bash -c 'f="'"$S"'/references/05-relatorio.md"
+    p0="$(grep -n "^## Passo 0" "$f" | cut -d: -f1)"; p1="$(grep -n "^## Passo 1" "$f" | cut -d: -f1)"
+    [ -n "$p0" ] && [ -n "$p1" ] && [ "$p0" -lt "$p1" ] || exit 1
+    grep -q "fechamento-pos-merge.sh --trabalho <OC-ID>-<slug>" "$f" || exit 1
+    grep -q "\*\*rc 4:\*\* o PR ainda não foi mesclado. PARE" "$f" || exit 1
+    grep -q "sem tocar \`ENTREGA.md\`" "$f" || exit 1
+    grep -q "\`Fechamento-de: <pr>\` e \`Merge: <merge>\`" "$f" || exit 1
+    grep -q "nunca chame nem sugira o \`/mergex-revisar\`" "$f"'
 
 afirma e1-worktree-movido-so-se-repara-antes-de-remover \
   "worktree movido volta com repair, e depois do remove ja nao volta (DR-93)" \
