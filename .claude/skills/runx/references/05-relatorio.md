@@ -10,7 +10,7 @@ Você está no E5, o último estágio. Você grava os dois relatórios, atualiza
 
 ## Passo 0 — Provar o merge e abrir a área do fechamento
 
-Só com entrega da mergex: `docs/entregas/<OC-ID>-<slug>/ENTREGA.md` e `.claude/skills/mergex/scripts/fechamento-pos-merge.sh` existem. Sem eles, não há PR para provar: siga para o Passo 1 na árvore atual.
+Só com entrega da mergex, isto é, com `docs/entregas/<OC-ID>-<slug>/ENTREGA.md`. Sem ela, não há PR para provar: siga para o Passo 1 na árvore atual. Com ela e sem `.claude/skills/mergex/scripts/fechamento-pos-merge.sh`, a instalação está incompleta: PARE e diga isso.
 
 Antes de gravar qualquer coisa, rode:
 
@@ -20,7 +20,7 @@ bash .claude/skills/mergex/scripts/fechamento-pos-merge.sh --trabalho <OC-ID>-<s
 
 - **rc 0:** a saída traz `worktree=`, `branch=`, `merge=` e `pr=`. Entre nesse worktree pelo mecanismo do harness, como no item 5 do Passo 0.b do E1, e siga dali.
 - **rc 4:** o PR ainda não foi mesclado. PARE: a ocorrência não fecha. Diga que o E5 roda depois do merge, e não grave relatório, índice nem estado.
-- **Qualquer outro rc:** o merge não foi provado. PARE e mostre a mensagem. Fechar sem essa prova é decisão da pessoa, não sua.
+- **Qualquer outro rc, ou instalação incompleta:** o merge não foi provado. PARE e mostre a mensagem. Fechar sem essa prova é decisão da pessoa, não sua.
 
 Nunca faça merge aqui, e nunca chame nem sugira o `/mergex-revisar`.
 
@@ -130,7 +130,7 @@ O deploy é externo: runx **registra** que a correção está liberada, não exe
 - [ ] A reindexação do `memox` foi disparada, ou o passo foi pulado por ela não estar instalada.
 - [ ] `.expx/estado.json` gravado com `trabalho`, `fase` e `task` em `null`, e o arquivo continua existindo — ou o projeto não tem `.expx/` e nada foi criado.
 - [ ] Nada em `docs/manutencao/` foi apagado ou movido.
-- [ ] Com entrega da mergex, o Passo 0 deu rc 0 e o PR de fechamento foi aberto com os trailers; ou a pessoa decidiu fechar sem a prova.
+- [ ] Com entrega da mergex, o Passo 0 deu rc 0 e o PR de fechamento foi aberto com os trailers; ou, sem prova e fora do rc 4, a pessoa decidiu fechar.
 
 ## Quando o critério não é atendido
 
