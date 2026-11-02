@@ -10,7 +10,7 @@ Você está no E5, o último estágio. Você grava os dois relatórios, atualiza
 
 ## Passo 0 — Provar o merge e abrir a área do fechamento
 
-Só com entrega da mergex, isto é, com `docs/entregas/<OC-ID>-<slug>/ENTREGA.md`. Sem ela, não há PR para provar: siga para o Passo 1 na árvore atual. Com ela e sem `.claude/skills/mergex/scripts/fechamento-pos-merge.sh`, a instalação está incompleta: PARE e diga isso.
+Só com entrega da mergex, isto é, com `docs/entregas/<OC-ID>-<slug>/ENTREGA.md` na raiz do repositório (`git rev-parse --show-toplevel`). Sem ela, não há PR para provar: siga para o Passo 1 na árvore atual. Com ela e sem `.claude/skills/mergex/scripts/fechamento-pos-merge.sh` nessa raiz, a instalação está incompleta: PARE e diga isso.
 
 Antes de gravar qualquer coisa, rode:
 
