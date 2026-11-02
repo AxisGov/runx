@@ -92,8 +92,8 @@ consolida os contadores na abertura ou no próximo marco.
 Use o helper instalado, que não produz stdout:
 
 ```bash
-RX="$(git rev-parse --show-toplevel)" || RX=.; H="$RX/.claude/runx-hooks"; [ -f "$H/comum/expx_rastro.py" ] || H="$RX/.claude/hooks"; python3 "$H/comum/estado.py" reconstruir --ocorrencia docs/manutencao/<OC-ID>-<slug>
-RX="$(git rev-parse --show-toplevel)" || RX=.; H="$RX/.claude/runx-hooks"; [ -f "$H/comum/expx_rastro.py" ] || H="$RX/.claude/hooks"; python3 "$H/comum/estado.py" marco --ocorrencia docs/manutencao/<OC-ID>-<slug> \
+RX="$(git rev-parse --show-toplevel)" || RX=.; H="$RX/.claude/runx-hooks"; [ -f "$H/comum/expx_rastro.py" ] || H="$RX/.claude/hooks"; python3 "$H/comum/estado.py" reconstruir --ocorrencia "$RX/docs/manutencao/<OC-ID>-<slug>"
+RX="$(git rev-parse --show-toplevel)" || RX=.; H="$RX/.claude/runx-hooks"; [ -f "$H/comum/expx_rastro.py" ] || H="$RX/.claude/hooks"; python3 "$H/comum/estado.py" marco --ocorrencia "$RX/docs/manutencao/<OC-ID>-<slug>" \
   --tipo <transicao|bloqueio|decisao|termino> --id <identificador> --resultado <resultado>
 ```
 

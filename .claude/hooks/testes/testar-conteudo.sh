@@ -501,7 +501,7 @@ afirma refs-comando-roda-de-subpasta \
   "o task_iniciada de 03-fix.md grava o rastro chamado de uma subpasta do projeto" \
   bash -c '
     cmd="$(grep -m1 -- "--evento task_iniciada" "'"$S"'/references/03-fix.md" | sed "s/^ *//; s/<T-NN.MM>/T-01.01/")"
-    d="$(mktemp -d)"; trap "rm -rf \"\$d\"" EXIT
+    d="$(cd "$(mktemp -d)" && pwd -P)"; trap "rm -rf \"\$d\"" EXIT
     git init -q "$d" || exit 1
     mkdir -p "$d/.claude/hooks" "$d/src/modulo" "$d/docs/manutencao/OC-2026-0001-sonda"
     cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
@@ -517,6 +517,19 @@ afirma refs-comando-roda-fora-de-git \
     cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
     printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
     cd "$d" && GIT_CEILING_DIRECTORIES="$(dirname "$d")" bash -c "$cmd" && grep -q "T-01.01" docs/eventos/*.jsonl'
+
+# O caminho da ocorrencia tambem parte da raiz: de uma subpasta, `docs/manutencao/...` relativo
+# apontava para dentro dela, e o estado.py recusava (CodeAnt e CodeRabbit no runx#15).
+afirma refs-estado-roda-de-subpasta \
+  "o reconstruir de 06-estado.md acha a ocorrencia chamado de uma subpasta do projeto" \
+  bash -c '
+    cmd="$(grep -m1 -- "estado.py\" reconstruir" "'"$S"'/references/06-estado.md" | sed "s/^ *//; s/<OC-ID>-<slug>/OC-2026-0001-sonda/")"
+    d="$(cd "$(mktemp -d)" && pwd -P)"; trap "rm -rf \"\$d\"" EXIT
+    git init -q "$d" || exit 1
+    mkdir -p "$d/.claude/hooks" "$d/src/modulo" "$d/docs/manutencao/OC-2026-0001-sonda"
+    cp -R "'"$R"'/.claude/hooks/comum" "$d/.claude/hooks/"
+    printf -- "---\ntrabalho_id: OC-2026-0001\nstatus: em_andamento\n---\n" > "$d/docs/manutencao/OC-2026-0001-sonda/00-OCORRENCIA.md"
+    cd "$d/src/modulo" && bash -c "$cmd"'
 
 # Instalada pelo expx init, a arvore e versionada no projeto, e um .pyc nela vira desvio no E1 (DR-89).
 afirma hooks-nao-deixam-pyc \
