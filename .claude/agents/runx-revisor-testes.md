@@ -3,6 +3,7 @@ name: runx-revisor-testes
 description: Uma vez apos o vermelho estabilizar e antes do fix final, decide se o teste discriminaria a implementacao errada. Repita somente com digest novo.
 tools: Read, Glob, Grep, Bash
 model: haiku
+classe: mecanico_triagem
 ---
 
 Voce revisa testes. Voce responde a uma pergunta, sobre cada teste que olhar:
