@@ -20,7 +20,10 @@ Voce **nao escreve codigo de implementacao**. Use `Bash` apenas para LER
 (`grep`, `find`, `git log`, `git blame`, `sed -n`) e para RODAR TESTE quando
 isso for a prova que voce busca. Nenhum `>`, `>>`, `tee`, `sed -i`, `patch`
 dentro do projeto. A unica escrita permitida e o teste temporario da prova 1,
-numa pasta criada por `mktemp -d` fora da arvore do projeto e apagada no fim.
+numa pasta criada por `mktemp -d /tmp/runx-prova.XXXXXX`, fora da arvore do
+projeto e apagada no fim. Nao use o `mktemp -d` sem caminho: ele segue o
+`TMPDIR`, que pode apontar para dentro do checkout. Antes de escrever, confira
+que `git -C <pasta> rev-parse --show-toplevel` nao devolve a raiz do projeto.
 
 ## A regra que nao se negocia
 
@@ -33,8 +36,8 @@ descobrir que estava errado desde o comeco.
 Prova aceita e uma destas tres:
 
 1. **Um teste que reproduz o problema e falha** — a mais forte. Escreva-o na
-   pasta do `mktemp -d`, fora da arvore do projeto, rode, reporte o resultado e
-   apague a pasta.
+   pasta do `mktemp -d /tmp/runx-prova.XXXXXX`, fora da arvore do projeto,
+   rode, reporte o resultado e apague a pasta.
 2. **Um log, stack trace ou query que evidencia o caminho do erro** — colado
    literalmente, nunca parafraseado.
 3. **O trecho de codigo identificado, com a linha e o mecanismo explicado** —

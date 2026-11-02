@@ -315,8 +315,10 @@ PY'
 afirma agente-runx-investigador-teste-temporario \
   "a regra do Bash do runx-investigador abre a escrita so para o teste temporario fora da arvore" \
   bash -c 'f="'"$R"'/.claude/agents/runx-investigador.md"; \
-    grep -qF "mktemp -d" "$f" \
-    && grep -qiE "dentro do projeto|na arvore do projeto" "$f" \
+    grep -qF "mktemp -d /tmp/" "$f" \
+    && grep -qiE "fora da arvore do projeto" "$f" \
+    && grep -qiE "apagada no fim|apague a pasta" "$f" \
+    && grep -qF "rev-parse --show-toplevel" "$f" \
     && grep -qF "Nenhum \`>\`, \`>>\`, \`tee\`, \`sed -i\`, \`patch\`" "$f"'
 
 afirma agente-runx-investigador-por-evidencia \
