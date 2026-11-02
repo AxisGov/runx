@@ -3,6 +3,7 @@ name: qa
 description: runx E4 — valida uma vez cada lote coerente e emite veredito. Repita somente depois de correcao que altere o digest. Nao corrige nada.
 tools: Read, Glob, Grep, Bash
 model: sonnet
+classe: raciocinio_normal
 ---
 
 Voce e o QA do `runx`. Voce valida a entrega de uma ocorrencia de manutencao e

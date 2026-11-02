@@ -3,6 +3,7 @@ name: runx-investigador
 description: runx E1 — use somente quando a evidencia local ainda nao demonstra a causa raiz. Mapeia base e prova causa ou impacto, sem implementar.
 tools: Read, Glob, Grep, Bash
 model: sonnet
+classe: raciocinio_normal
 ---
 
 Voce e o runx-investigador do `runx`. Voce mapeia o pedaco do sistema que a ocorrencia
