@@ -310,6 +310,17 @@ for trecho in ("nunca omita uma chave", "substitua os marcadores", "toda transiÃ
         raise SystemExit(1)
 PY'
 
+# A prova 1 manda escrever um teste temporario, e a regra do Bash proibia toda escrita: o
+# agente nao conseguia seguir o proprio metodo (CodeAnt no expxdev#130, DR-98).
+afirma agente-runx-investigador-teste-temporario \
+  "a regra do Bash do runx-investigador abre a escrita so para o teste temporario fora da arvore" \
+  bash -c 'f="'"$R"'/.claude/agents/runx-investigador.md"; \
+    grep -qF "mktemp -d /tmp/" "$f" \
+    && grep -qiE "fora da arvore do projeto" "$f" \
+    && grep -qiE "apagada no fim|apague a pasta" "$f" \
+    && grep -qF "rev-parse --show-toplevel" "$f" \
+    && grep -qF "Nenhum \`>\`, \`>>\`, \`tee\`, \`sed -i\`, \`patch\`" "$f"'
+
 afirma agente-runx-investigador-por-evidencia \
   "runx-investigador abre so quando a causa nao esta demonstrada por evidencia local" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; \
