@@ -416,7 +416,7 @@ afirma e5-so-fecha-com-o-merge-provado \
     p0="$(grep -n "^## Passo 0" "$f" | cut -d: -f1)"; p1="$(grep -n "^## Passo 1" "$f" | cut -d: -f1)"
     [ -n "$p0" ] && [ -n "$p1" ] && [ "$p0" -lt "$p1" ] || exit 1
     t="$(sed -n "${p0},${p1}p" "$f")"
-    printf "%s\\n" "$t" | grep -q "fechamento-pos-merge.sh --trabalho <OC-ID>-<slug>" || exit 1
+    printf "%s\\n" "$t" | grep -qF "bash \"\$(git rev-parse --show-toplevel)/.claude/skills/mergex/scripts/fechamento-pos-merge.sh\" --trabalho <OC-ID>-<slug>" || exit 1
     printf "%s\\n" "$t" | grep -q "\\*\\*rc 4:\\*\\* o PR ainda não foi mesclado. PARE" || exit 1
     printf "%s\\n" "$t" | grep -q "a instalação está incompleta: PARE" || exit 1
     grep -q "sem tocar \`ENTREGA.md\`" "$f" || exit 1

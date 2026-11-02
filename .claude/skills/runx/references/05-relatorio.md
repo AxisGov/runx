@@ -15,7 +15,7 @@ Só com entrega da mergex, isto é, com `docs/entregas/<OC-ID>-<slug>/ENTREGA.md
 Antes de gravar qualquer coisa, rode:
 
 ```bash
-bash .claude/skills/mergex/scripts/fechamento-pos-merge.sh --trabalho <OC-ID>-<slug>
+bash "$(git rev-parse --show-toplevel)/.claude/skills/mergex/scripts/fechamento-pos-merge.sh" --trabalho <OC-ID>-<slug>
 ```
 
 - **rc 0:** a saída traz `worktree=`, `branch=`, `merge=` e `pr=`. Entre nesse worktree pelo mecanismo do harness, como no item 5 do Passo 0.b do E1, e siga dali.
