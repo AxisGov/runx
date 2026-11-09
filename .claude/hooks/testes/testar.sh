@@ -529,6 +529,87 @@ echo "== raiz_repo em worktree =="
 # subdiretorio do worktree, cai no fallback (devolve o proprio subdiretorio).
 caso_py "raiz-em-worktree" "$WT/src" "$WT" "R.raiz_repo()"
 
+echo "== pasta_ocorrencia pela branch =="
+# Numa worktree nova de OC, antes do 00-OCORRENCIA.md dela, a escolha por mtime
+# caia na ocorrencia FECHADA mais recente e o rastro ia para ela (conselhos,
+# OC-2026-0007 e 0009 gravaram em OC-2026-0006.jsonl). A branch decide antes.
+PB="$(mktemp -d)"
+nova_oc() { # nova_oc <raiz> <pasta> <id> <arquivo> <status>
+  mkdir -p "$1/docs/manutencao/$2"
+  printf -- '---\nexpx_tool: runx\nkind: x\ntrabalho_id: %s\nstatus: %s\n---\n' "$3" "$5" > "$1/docs/manutencao/$2/$4"
+}
+repo_na_branch() { # repo_na_branch <dir> <branch>
+  git init -q "$1" && git -C "$1" symbolic-ref HEAD "refs/heads/$2"
+  nova_oc "$1" OC-2026-0005-z OC-2026-0005 ORQUESTRADOR.md concluido
+  nova_oc "$1" OC-2026-0006-fechada OC-2026-0006 ORQUESTRADOR.md concluido
+}
+caso_valor() { # caso_valor <nome> <cwd> <esperado> <expressao-python> — compara texto, sem realpath
+  local real
+  real=$(cd "$2" && python3 -c "
+import sys; sys.path.insert(0, '$H/comum')
+import expx_rastro as R
+print($4)
+" 2>&1)
+  if [ "$real" = "$3" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "$1" "$real"
+  else falhou=$((falhou+1)); printf '  FALHA %-45s esperado=%s real=%s\n' "$1" "$3" "$real"; fi
+}
+repo_na_branch "$PB/a" fix/OC-2026-0007-nova
+caso_valor "branch-de-oc-sem-pasta-nao-cai-na-fechada" "$PB/a" "None" "R.pasta_ocorrencia()"
+nova_oc "$PB/a" OC-2026-0007-nova OC-2026-0007 00-OCORRENCIA.md em_andamento
+caso_valor "branch-de-oc-acha-a-pasta-no-e1" "$PB/a" "OC-2026-0007" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/b" fix/OC-2026-0007-outro-slug
+nova_oc "$PB/b" OC-2026-0007-nova OC-2026-0007 ORQUESTRADOR.md em_andamento
+caso_valor "branch-de-oc-acha-pelo-id-com-outro-slug" "$PB/b" "OC-2026-0007" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/c" chore/OC-2026-0006-fechada
+nova_oc "$PB/c" OC-2026-0008-aberta OC-2026-0008 ORQUESTRADOR.md em_andamento
+caso_valor "branch-da-fechada-cede-a-aberta-com-orquestrador" "$PB/c" "OC-2026-0008" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/d" main
+nova_oc "$PB/d" OC-2026-0008-aberta OC-2026-0008 ORQUESTRADOR.md em_andamento
+caso_valor "fora-de-branch-de-oc-a-aberta-vence" "$PB/d" "OC-2026-0008" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/e" feature/OC-2026-0006-fechada
+nova_oc "$PB/e" OC-2026-0008-aberta OC-2026-0008 ORQUESTRADOR.md em_andamento
+caso_valor "branch-nao-oc-com-nome-da-fechada-nao-decide" "$PB/e" "OC-2026-0008" "R.trabalho_id(R.pasta_ocorrencia())"
+# Ocorrencia nova aberta sem worktree, numa branch de outra ocorrencia (com ou sem a pasta
+# dela, fechada): a aberta vence; a fechada da branch so vale sem nenhuma aberta (E5 dela).
+repo_na_branch "$PB/g" fix/OC-2026-0006-fechada
+nova_oc "$PB/g" OC-2026-0009-sem-worktree OC-2026-0009 00-OCORRENCIA.md em_andamento
+caso_valor "branch-de-oc-fechada-cede-a-aberta" "$PB/g" "OC-2026-0009" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/h" fix/OC-2026-0004-sem-pasta
+nova_oc "$PB/h" OC-2026-0009-sem-worktree OC-2026-0009 00-OCORRENCIA.md em_andamento
+caso_valor "branch-de-oc-sem-pasta-acha-a-aberta" "$PB/h" "OC-2026-0009" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/i" fix/OC-2026-0006-fechada
+caso_valor "branch-de-oc-fechada-sem-aberta-e-ela" "$PB/i" "OC-2026-0006" "R.trabalho_id(R.pasta_ocorrencia())"
+# A pasta pelo nome ou pelo OC-ID so vale se o trabalho_id dela e o da branch.
+repo_na_branch "$PB/j" fix/OC-2026-0007-nova
+nova_oc "$PB/j" OC-2026-0007-nova OC-2026-0008 00-OCORRENCIA.md em_andamento
+caso_valor "pasta-da-branch-com-outro-id-nao-vale" "$PB/j" "None" "R.pasta_ocorrencia()"
+nova_oc "$PB/j" OC-2026-0007-outra OC-2026-0007 00-OCORRENCIA.md em_andamento
+caso_valor "pasta-da-branch-com-outro-id-nao-cede-a-outra-do-oc" "$PB/j" "None" "R.pasta_ocorrencia()"
+repo_na_branch "$PB/k" fix/OC-2026-0007-sem-pasta
+nova_oc "$PB/k" OC-2026-0007-a OC-2026-0007 00-OCORRENCIA.md em_andamento
+nova_oc "$PB/k" OC-2026-0007-b OC-2026-0008 00-OCORRENCIA.md em_andamento
+caso_valor "pastas-do-oc-que-se-contradizem-nao-decidem" "$PB/k" "None" "R.pasta_ocorrencia()"
+# Worktree vinculada (.git arquivo, gitdir absoluto e relativo) e HEAD destacado.
+repo_na_branch "$PB/f" main
+git -C "$PB/f" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i
+git -C "$PB/f" worktree add -q -b fix/OC-2026-0007-nova "$PB/f-wt" >/dev/null 2>&1
+caso_valor "worktree-gitdir-absoluto" "$PB/f-wt" "fix/OC-2026-0007-nova" "R.branch_atual(R.raiz_repo())"
+caso_valor "worktree-de-oc-sem-pasta" "$PB/f-wt" "None" "R.pasta_ocorrencia()"
+gd="$(sed -n 's/^gitdir: //p' "$PB/f-wt/.git")"
+printf 'gitdir: %s\n' "$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$gd" "$PB/f-wt")" > "$PB/f-wt/.git"
+caso_valor "worktree-gitdir-relativo" "$PB/f-wt" "fix/OC-2026-0007-nova" "R.branch_atual(R.raiz_repo())"
+git -C "$PB/f" checkout -q --detach
+caso_valor "head-destacado-sem-branch" "$PB/f" "None" "R.branch_atual(R.raiz_repo())"
+# Sem pasta, o segredo continua barrando, sem traceback e sem gravar na fechada.
+seg=$(printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"ghp_A1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvWxYz"}}' "$PB/a/src/a.ts" \
+  | (cd "$PB/a" && rm -rf docs/manutencao/OC-2026-0007-nova && python3 "$H/comum/segredo-no-commit.py") 2>&1); seg_rc=$?
+if [ "$seg_rc" -eq 2 ] && ! printf '%s' "$seg" | grep -q Traceback && [ ! -e "$PB/a/docs/eventos/OC-2026-0006.jsonl" ]; then
+  ok=$((ok+1)); printf '  ok   %-46s exit=%s\n' "segredo-barra-sem-pasta-da-oc" "$seg_rc"
+else
+  falhou=$((falhou+1)); printf '  FALHA %-45s exit=%s\n     %s\n' "segredo-barra-sem-pasta-da-oc" "$seg_rc" "$(printf '%s' "$seg" | head -3)"
+fi
+rm -rf "$PB"
+
 echo "== robustez: entrada invalida nunca trava =="
 for hk in comum/rastro-arquivo comum/rastro-suite runx/causa-antes-do-plano \
           runx/regressao-antes-do-fix runx/task-so-fecha-verde \

@@ -309,5 +309,62 @@ afirma session-start-recusa-fail-open "SessionStart com ocorrência inválida sa
   bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && [ "$3" = "$4" ] && [ ! -e "$5/.expx/handoff.md" ]' \
   _ "$cod_i" "$saida_i" "$antes_i" "$(hash_arquivo "$I/.expx/estado.json")" "$I"
 
+# Os derivados ficam fora do versionador pelo exclude local do Git: o handoff.md
+# nao rastreado barrava o E1 e o persistir-metodo da mergex como desvio
+# (conselhos, OC-2026-0003 e 0009). Quem os grava garante, como o DS-123 da sprintx.
+G="$T/comgit"; mkdir -p "$G"; git init -q "$G"
+mkdir -p "$G/.expx" "$G/docs/manutencao/OC-2026-0500-g/sprint-01"
+sed 's/OC-2026-0042/OC-2026-0500/' "$O/ORQUESTRADOR.md" | sed 's/^estagio: .*$/estagio: e3/; s/^status: .*$/status: em_andamento/; s/^concluido_em: .*$/concluido_em: null/' > "$G/docs/manutencao/OC-2026-0500-g/ORQUESTRADOR.md"
+sed 's/OC-2026-0042/OC-2026-0500/' "$O/sprint-01/tasks.md" > "$G/docs/manutencao/OC-2026-0500-g/sprint-01/tasks.md"
+sed 's/OC-2026-0042/OC-2026-0500/' "$O/BLOQUEIOS.md" > "$G/docs/manutencao/OC-2026-0500-g/BLOQUEIOS.md"
+EXC="$(git -C "$G" rev-parse --git-path info/exclude)"; case "$EXC" in /*) ;; *) EXC="$G/$EXC" ;; esac
+reconstroi() { (cd "$1" && python3 "$HELPER" reconstruir --ocorrencia "$2" --agora 2026-10-27T10:00:00Z 2>&1); }
+saida_g=$(reconstroi "$G" "$G/docs/manutencao/OC-2026-0500-g"); cod_g=$?
+afirma derivados-no-exclude "estado.json e handoff.md entram no info/exclude e somem do status" \
+  bash -c '[ "$1" -eq 0 ] && [ -z "$2" ] && [ -f "$4/.expx/handoff.md" ] && \
+    grep -qx ".expx/estado.json" "$3" && grep -qx ".expx/handoff.md" "$3" && \
+    ! git -C "$4" status --porcelain --untracked-files=all | grep -q "\.expx/"' _ "$cod_g" "$saida_g" "$EXC" "$G"
+reconstroi "$G" "$G/docs/manutencao/OC-2026-0500-g" >/dev/null
+afirma derivados-exclude-idempotente "reconstruir de novo não duplica as linhas" \
+  bash -c '[ "$(grep -cx ".expx/estado.json" "$1")" -eq 1 ] && [ "$(grep -cx ".expx/handoff.md" "$1")" -eq 1 ]' _ "$EXC"
+# Ja ignorado por outra regra (o .gitignore versionado do time): nada e acrescentado.
+GI="$T/comgitignore"; mkdir -p "$GI"; git init -q "$GI"; cp -R "$G/docs" "$GI/docs"; mkdir -p "$GI/.expx"
+printf '.expx/\n' > "$GI/.gitignore"
+EXCI="$(git -C "$GI" rev-parse --git-path info/exclude)"; case "$EXCI" in /*) ;; *) EXCI="$GI/$EXCI" ;; esac
+antes_exci=$(cat "$EXCI" 2>/dev/null)
+reconstroi "$GI" "$GI/docs/manutencao/OC-2026-0500-g" >/dev/null; cod_gi=$?
+afirma derivados-ja-ignorados "já ignorado pelo .gitignore, o exclude não muda" \
+  bash -c '[ "$1" -eq 0 ] && [ "$2" = "$(cat "$3" 2>/dev/null)" ]' _ "$cod_gi" "$antes_exci" "$EXCI"
+# Numa worktree vinculada, o exclude e o do diretorio comum (git rev-parse --git-path).
+git -C "$GI" add -A >/dev/null 2>&1
+git -C "$GI" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -qm base >/dev/null 2>&1
+git -C "$GI" rm -q .gitignore >/dev/null 2>&1
+git -C "$GI" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -qm "sem gitignore" >/dev/null 2>&1
+GW="$T/comgit-wt"; git -C "$GI" worktree add -q -b fix/OC-2026-0500-g "$GW" >/dev/null 2>&1
+mkdir -p "$GW/.expx"
+reconstroi "$GW" "$GW/docs/manutencao/OC-2026-0500-g" >/dev/null; cod_gw=$?
+afirma derivados-exclude-na-worktree "na worktree, o exclude comum recebe as linhas e a árvore fica limpa" \
+  bash -c '[ "$1" -eq 0 ] && grep -qx ".expx/handoff.md" "$2" && \
+    ! git -C "$3" status --porcelain --untracked-files=all | grep -q "\.expx/"' _ "$cod_gw" "$EXCI" "$GW"
+
+# Raiz que nao e a raiz do Git (GIT_DIR e GIT_WORK_TREE no ambiente, sem .git acima): a
+# regra sai relativa a raiz do Git, ou nao casaria com sub/.expx/...
+GS="$T/separado"; mkdir -p "$GS/w/sub"; git init -q --bare "$GS/git"
+cp -R "$G/docs" "$GS/w/sub/docs"; mkdir -p "$GS/w/sub/.expx"
+(cd "$GS/w/sub" && GIT_DIR="$GS/git" GIT_WORK_TREE="$GS/w" python3 "$HELPER" reconstruir \
+  --ocorrencia "$GS/w/sub/docs/manutencao/OC-2026-0500-g" --agora 2026-10-27T10:00:00Z >/dev/null 2>&1); cod_gs=$?
+afirma derivados-relativos-a-raiz-do-git "fora da raiz do Git, a regra leva o prefixo e o status fica limpo" \
+  bash -c '[ "$1" -eq 0 ] && grep -qx "sub/.expx/handoff.md" "$2/git/info/exclude" && \
+    ! GIT_DIR="$2/git" GIT_WORK_TREE="$2/w" git -C "$2/w" status --porcelain --untracked-files=all | grep -q "\.expx/"' _ "$cod_gs" "$GS"
+
+# Derivado ja versionado pelo time: a regra no exclude nao o ignoraria nem limparia o
+# status. Ele fica como esta, e so o outro entra.
+GT="$T/comgit-versionado"; mkdir -p "$GT"; git init -q "$GT"; cp -R "$G/docs" "$GT/docs"; mkdir -p "$GT/.expx"
+printf '{}\n' > "$GT/.expx/estado.json"; git -C "$GT" add .expx/estado.json
+EXCT="$(git -C "$GT" rev-parse --git-path info/exclude)"; case "$EXCT" in /*) ;; *) EXCT="$GT/$EXCT" ;; esac
+reconstroi "$GT" "$GT/docs/manutencao/OC-2026-0500-g" >/dev/null; cod_gt=$?
+afirma derivado-versionado-fica-de-fora "o derivado versionado não entra no exclude, o outro entra" \
+  bash -c '[ "$1" -eq 0 ] && ! grep -qx ".expx/estado.json" "$2" && grep -qx ".expx/handoff.md" "$2"' _ "$cod_gt" "$EXCT"
+
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]

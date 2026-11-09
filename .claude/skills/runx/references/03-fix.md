@@ -76,11 +76,39 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
      --fase e3 --task <T-NN.MM> --resultado <discriminam|nao_discriminam> --detalhe "N achados"
    ```
 7. Verifique **de fato** o `criterio_aceite` da task — não presuma que ele decorre do teste verde.
-8. Só então marque `status: concluida` em `tasks.md` — **no frontmatter e na prosa** — acrescentando na linha da task: data (obtenha com `date +%Y-%m-%d` do sistema, nunca de memória) e resultado da suíte. No YAML, isso significa `status: concluida`, `concluida_em` com a data e `suite: parcial` (ou `verde`, se você rodou a suíte inteira), mais `atualizado_em` reescrito. Em seguida grave em `.expx/estado.json` (`references/06-estado.md`) o novo `tasks_concluidas` e o `task` da próxima task a ser aberta — `null` quando não houver próxima. Registre no rastro:
+8. **Revisão por task.** Com o critério de aceite verificado, e antes de marcar a task concluída, rode a revisão por task do núcleo do expx (contrato `expx-revisao`). A evidência que ela grava, `docs/entregas/<OC-ID>/revisao/<T-NN.MM>.json`, entra no commit da task pelo E1 da mergex, que só a aceita junto do produto da task: rodar a revisão depois do commit não cria evidência para ele, e um commit só com ela é recusado.
+
+   **Primeiro, o modo.** Sem `.expx/fatiamento.json`, o leitor não roda e vale o padrão, `se_disponivel`. Com o arquivo, o modo é o `revisao_por_task.modo` que o leitor imprime:
 
    ```
-   RX="$(git rev-parse --show-toplevel)" || RX=.; H="$RX/.claude/runx-hooks"; [ -f "$H/comum/expx_rastro.py" ] || H="$RX/.claude/hooks"; python3 "$H/comum/rastro.py" --evento task_concluida --fase e3 --task <T-NN.MM>
+   RAIZ="$(git rev-parse --show-toplevel)"; N="$RAIZ/.expx/marketplace/plugins/expx/nucleo/scripts"
+   if [ -f "$RAIZ/.expx/fatiamento.json" ]; then node "$N/expx-fatiamento.mjs" --formato json --raiz "$RAIZ"; fi
    ```
+
+   Com o arquivo, mas sem o leitor ou com o leitor falhando, o modo não pode ser conhecido: não rode a revisão, a task não fecha, e o bloqueio é `prerequisito_ausente` ("atualize o expx"). Com `desligada`, pule o resto deste passo.
+
+   **Depois, só com `se_disponivel` ou `obrigatoria`, a revisão.** Sem o `expx-revisao.mjs`, trate como a saída 2.
+
+   ```
+   RAIZ="$(git rev-parse --show-toplevel)"; N="$RAIZ/.expx/marketplace/plugins/expx/nucleo/scripts"
+   node "$N/expx-revisao.mjs" revisar --trabalho <OC-ID> --task <T-NN.MM> --raiz "$RAIZ" --arquivos <arquivos.cria e arquivos.altera da task, separados por vírgula>
+   ```
+
+   - **Saída 0** (`ok`): siga.
+   - **Saída 1** (`achados`): há achado aberto em linha que a task alterou. Corrija na própria task, rode de novo o subconjunto afetado e a revisão, até duas tentativas. Se persistir, registre o bloqueio: `revisao_defeito` quando o achado é real e não cabe na task, `revisao_contestada` quando você argumenta falso positivo, com o argumento. **Só o desenvolvedor rejeita** um achado (`expx-revisao.mjs rejeitar`): você classifica e contesta, nunca rejeita nem aceita o risco. Achado em linha que a task não alterou não bloqueia.
+   - **Saída 2** (`indisponivel`): em `se_disponivel` é aviso, que vai no detalhe da conclusão, e a task segue. Em `obrigatoria`, a task não fecha: bloqueio `prerequisito_ausente`. Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task, em nenhum modo: nada confirmou que o achado saiu, e a evidência nova apagaria o registro dele. O bloqueio é `prerequisito_ausente`, com o achado na descrição. Nunca rode `codeant login` nem defina credencial.
+   - **Saída 3** (`incompleta:<motivo>`): bloqueio `revisao_incompleta`, com a rota do motivo na tabela "Orientação ao consumidor" do contrato `expx-revisao` (`L1`: dividir a task; `lote-falhou`: revisar de novo a task inteira).
+   - **Saída 64 ou 75**: uso errado, ou evidência travada por outra execução. Com 75, espere e repita uma vez. Se persistir, ou com 64, bloqueio `prerequisito_ausente`, com a saída.
+   - **Outra saída** (`127` sem o `node`, por exemplo): a revisão não rodou; trate como a saída 2.
+
+   O bloqueio segue a "Regra de bloqueio" abaixo, com a classe no começo da descrição (`B-NN | T-NN.MM | revisao_incompleta: L1 | dividir a task`). A evidência fica na árvore para o E1, inclusive com `indisponivel`.
+9. Só então marque `status: concluida` em `tasks.md` — **no frontmatter e na prosa** — acrescentando na linha da task: data (obtenha com `date +%Y-%m-%d` do sistema, nunca de memória) e resultado da suíte. No YAML, isso significa `status: concluida`, `concluida_em` com a data e `suite: parcial` (ou `verde`, se você rodou a suíte inteira), mais `atualizado_em` reescrito. Em seguida grave em `.expx/estado.json` (`references/06-estado.md`) o novo `tasks_concluidas` e o `task` da próxima task a ser aberta — `null` quando não houver próxima. Registre no rastro:
+
+   ```
+   RX="$(git rev-parse --show-toplevel)" || RX=.; H="$RX/.claude/runx-hooks"; [ -f "$H/comum/expx_rastro.py" ] || H="$RX/.claude/hooks"; python3 "$H/comum/rastro.py" --evento task_concluida --fase e3 --task <T-NN.MM> --detalhe "revisao: <resultado>"
+   ```
+
+   O `<resultado>` é o que o `revisar` imprimiu depois do id da task (`ok`, `indisponivel:<motivo>`), ou `desligada` quando o passo 8 foi pulado.
 
 Critério de aceite não atendido, ou qualquer teste não passando: a task **NÃO** é concluída. **Não existe "concluído com ressalva".**
 
@@ -88,7 +116,7 @@ Critério de aceite não atendido, ou qualquer teste não passando: a task **NÃ
 
 O `fases.md` da sprint carrega um bloco Mermaid com o grafo de tasks, gerado no E2. Ao mudar o `status` de uma task, **atualize a cor do nó daquela task** — e só dela: reescreva apenas a linha `class` correspondente. Nós, arestas, `subgraph`, `classDef` e a linha do `critico` permanecem como o E2 os escreveu. Não recalcule o caminho crítico e não reescreva o bloco: a estrutura do grafo não muda durante a execução, só a cor muda. O mapa de status para classe está em `references/07-diagrama.md`.
 
-Isso vale nas duas transições da task: ao marcá-la `em_andamento` no passo 1, e ao marcá-la `concluida` (ou `bloqueada`) no passo 8. A gravação vai junto da gravação do `tasks.md` que você já está fazendo — é a mesma passada no disco, não uma segunda.
+Isso vale nas duas transições da task: ao marcá-la `em_andamento` no passo 1, e ao marcá-la `concluida` (ou `bloqueada`) no passo 9. A gravação vai junto da gravação do `tasks.md` que você já está fazendo — é a mesma passada no disco, não uma segunda.
 
 **Falha na atualização é registrada e ignorada.** Se o bloco não estiver lá, se o nó não for encontrado, se o arquivo tiver outra forma: a task continua concluída, a suíte continua verde e o estágio continua avançando. A regra normativa do diagrama fica em `references/07-diagrama.md`:
 
@@ -141,7 +169,7 @@ Este relatório é para o usuário na conversa; ele **não** substitui os relat�
 - [ ] Toda task está `concluida` ou `bloqueada` (nenhuma `pendente`/`em_andamento` executável restante).
 - [ ] `tasks.md` atualizado com data e resultado da suíte em cada task concluída.
 - [ ] Toda task concluída tem `suite: parcial` ou `suite: verde` — nenhuma com `vermelha` ou `nao_executada`. A suíte inteira é exigida no E4, não aqui.
-- [ ] Nenhum arquivo fora da lista de impactados do `01-CAUSA-RAIZ.md` e de `tasks.md` foi alterado.
+- [ ] Nenhum arquivo fora da lista de impactados do `01-CAUSA-RAIZ.md` e de `tasks.md` foi alterado. A evidência da revisão por task (`docs/entregas/<OC-ID>/revisao/<T-NN.MM>.json`, passo 8) é artefato do método, não escopo.
 - [ ] Toda task `concluida` tem `task_iniciada` e `task_concluida` gravados no rastro.
 - [ ] Relatório de encerramento entregue com as 4 seções.
 - [ ] Frontmatter e prosa consistentes em todo arquivo tocado: `tasks.md`, `fases.md`, `sprint.md`, `BLOQUEIOS.md` e o `estagio` do `ORQUESTRADOR.md`.
