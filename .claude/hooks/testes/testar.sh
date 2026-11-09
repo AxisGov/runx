@@ -619,6 +619,15 @@ print(R.pasta_ocorrencia())
 " 2>&1)
 if [ "$gf" = "None" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "git-falhando-nao-cai-na-fechada-da-branch" "$gf"
 else falhou=$((falhou+1)); printf '  FALHA %-45s real=%s\n' "git-falhando-nao-cai-na-fechada-da-branch" "$gf"; fi
+# ...nem sem aberta nenhuma: a lista vazia voltava [] sem consultar o Git, e a fechada da branch
+# passava (CodeAnt no conselhos#293, expx_rastro.py:514 e 597).
+gz=$(cd "$PB/i" && GIT_DIR="$PB/nao-existe" python3 -c "
+import sys; sys.path.insert(0, '$H/comum')
+import expx_rastro as R
+print(R.pasta_ocorrencia())
+" 2>&1)
+if [ "$gz" = "None" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "git-falhando-sem-aberta-nao-cai-na-fechada" "$gz"
+else falhou=$((falhou+1)); printf '  FALHA %-45s real=%s\n' "git-falhando-sem-aberta-nao-cai-na-fechada" "$gz"; fi
 # Branch orfa num repositorio com commits: o rev-parse sai 1, mas nao e "sem commit" (CodeAnt no #19).
 repo_na_branch "$PB/n" main
 nova_oc "$PB/n" OC-2026-0011-aberta-na-main OC-2026-0011 ORQUESTRADOR.md em_andamento
