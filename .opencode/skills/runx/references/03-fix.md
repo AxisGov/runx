@@ -96,7 +96,7 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
 
    - **Saída 0** (`ok`): siga.
    - **Saída 1** (`achados`): há achado aberto em linha que a task alterou. Corrija na própria task, rode de novo o subconjunto afetado e a revisão, até duas tentativas. Se persistir, registre o bloqueio: `revisao_defeito` quando o achado é real e não cabe na task, `revisao_contestada` quando você argumenta falso positivo, com o argumento. **Só o desenvolvedor rejeita** um achado (`expx-revisao.mjs rejeitar`): você classifica e contesta, nunca rejeita nem aceita o risco. Achado em linha que a task não alterou não bloqueia.
-   - **Saída 2** (`indisponivel`): em `se_disponivel` é aviso, que vai no detalhe da conclusão, e a task segue. Em `obrigatoria`, a task não fecha: bloqueio `prerequisito_ausente`. Nunca rode `codeant login` nem defina credencial.
+   - **Saída 2** (`indisponivel`): em `se_disponivel` é aviso, que vai no detalhe da conclusão, e a task segue. Em `obrigatoria`, a task não fecha: bloqueio `prerequisito_ausente`. Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task, em nenhum modo: nada confirmou que o achado saiu, e a evidência nova apagaria o registro dele. O bloqueio é `prerequisito_ausente`, com o achado na descrição. Nunca rode `codeant login` nem defina credencial.
    - **Saída 3** (`incompleta:<motivo>`): bloqueio `revisao_incompleta`, com a rota do motivo na tabela "Orientação ao consumidor" do contrato `expx-revisao` (`L1`: dividir a task; `lote-falhou`: revisar de novo a task inteira).
    - **Saída 64 ou 75**: uso errado, ou evidência travada por outra execução. Com 75, espere e repita uma vez. Se persistir, ou com 64, bloqueio `prerequisito_ausente`, com a saída.
 
@@ -168,7 +168,7 @@ Este relatório é para o usuário na conversa; ele **não** substitui os relat�
 - [ ] Toda task está `concluida` ou `bloqueada` (nenhuma `pendente`/`em_andamento` executável restante).
 - [ ] `tasks.md` atualizado com data e resultado da suíte em cada task concluída.
 - [ ] Toda task concluída tem `suite: parcial` ou `suite: verde` — nenhuma com `vermelha` ou `nao_executada`. A suíte inteira é exigida no E4, não aqui.
-- [ ] Nenhum arquivo fora da lista de impactados do `01-CAUSA-RAIZ.md` e de `tasks.md` foi alterado.
+- [ ] Nenhum arquivo fora da lista de impactados do `01-CAUSA-RAIZ.md` e de `tasks.md` foi alterado. A evidência da revisão por task (`docs/entregas/<OC-ID>/revisao/<T-NN.MM>.json`, passo 8) é artefato do método, não escopo.
 - [ ] Toda task `concluida` tem `task_iniciada` e `task_concluida` gravados no rastro.
 - [ ] Relatório de encerramento entregue com as 4 seções.
 - [ ] Frontmatter e prosa consistentes em todo arquivo tocado: `tasks.md`, `fases.md`, `sprint.md`, `BLOQUEIOS.md` e o `estagio` do `ORQUESTRADOR.md`.

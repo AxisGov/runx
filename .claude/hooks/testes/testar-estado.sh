@@ -347,6 +347,16 @@ afirma derivados-exclude-na-worktree "na worktree, o exclude comum recebe as lin
   bash -c '[ "$1" -eq 0 ] && grep -qx ".expx/handoff.md" "$2" && \
     ! git -C "$3" status --porcelain --untracked-files=all | grep -q "\.expx/"' _ "$cod_gw" "$EXCI" "$GW"
 
+# Raiz que nao e a raiz do Git (GIT_DIR e GIT_WORK_TREE no ambiente, sem .git acima): a
+# regra sai relativa a raiz do Git, ou nao casaria com sub/.expx/...
+GS="$T/separado"; mkdir -p "$GS/w/sub"; git init -q --bare "$GS/git"
+cp -R "$G/docs" "$GS/w/sub/docs"; mkdir -p "$GS/w/sub/.expx"
+(cd "$GS/w/sub" && GIT_DIR="$GS/git" GIT_WORK_TREE="$GS/w" python3 "$HELPER" reconstruir \
+  --ocorrencia "$GS/w/sub/docs/manutencao/OC-2026-0500-g" --agora 2026-10-27T10:00:00Z >/dev/null 2>&1); cod_gs=$?
+afirma derivados-relativos-a-raiz-do-git "fora da raiz do Git, a regra leva o prefixo e o status fica limpo" \
+  bash -c '[ "$1" -eq 0 ] && grep -qx "sub/.expx/handoff.md" "$2/git/info/exclude" && \
+    ! GIT_DIR="$2/git" GIT_WORK_TREE="$2/w" git -C "$2/w" status --porcelain --untracked-files=all | grep -q "\.expx/"' _ "$cod_gs" "$GS"
+
 # Derivado ja versionado pelo time: a regra no exclude nao o ignoraria nem limparia o
 # status. Ele fica como esta, e so o outro entra.
 GT="$T/comgit-versionado"; mkdir -p "$GT"; git init -q "$GT"; cp -R "$G/docs" "$GT/docs"; mkdir -p "$GT/.expx"

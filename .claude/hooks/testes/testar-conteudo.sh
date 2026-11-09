@@ -599,6 +599,11 @@ afirma revisao-sem-configuracao-nao-chama-o-leitor "sem .expx/fatiamento.json o 
   tem "$FIX" 'if \[ -f "\$RAIZ/\.expx/fatiamento\.json" \]'
 afirma passo-0b-derivados-ignorados "o Passo 0.b diz que os derivados ficam no exclude local" \
   tem "$S/references/01-investigacao.md" 'estado\.py.*info/exclude'
+afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo estourado no E3 nem no E4" \
+  bash -c 'grep -F "Nenhum arquivo fora da lista" "$1" | grep -qF "docs/entregas/<OC-ID>/revisao/" && \
+    grep -F "Compare nos dois sentidos" -A3 "$2" | grep -qF "docs/entregas/<OC-ID>/revisao/"' _ "$FIX" "$S/references/04-qa.md"
+afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
+  tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-nunca-rejeita "a skill nunca rejeita achado: só o desenvolvedor" \
   tem "$FIX" 'Só o desenvolvedor rejeita'
 afirma revisao-no-detalhe-da-conclusao "o resultado vai no detalhe do task_concluida, sem evento novo" \

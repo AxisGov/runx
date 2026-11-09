@@ -466,42 +466,17 @@ def _tem_marca(pasta):
     )
 
 
-def pasta_ocorrencia(raiz=None):
-    """A pasta da ocorrencia em andamento, ou None.
+def _id_declarado(pasta):
+    """O `trabalho_id` do frontmatter do ORQUESTRADOR.md ou do 00-OCORRENCIA.md, ou None."""
+    for arquivo in ("ORQUESTRADOR.md", "00-OCORRENCIA.md"):
+        valor = frontmatter(os.path.join(pasta, arquivo)).get("trabalho_id")
+        if trabalho_seguro(valor):
+            return str(valor)
+    return None
 
-    Numa branch de ocorrencia (`fix|chore/<OC-ID>-<slug>`), ela decide primeiro:
-    a pasta com o nome do ultimo segmento, aberta ou fechada, senao a do mesmo
-    OC-ID. Sem a pasta ainda (worktree nova, antes do 00-OCORRENCIA.md), devolve
-    None: a fechada mais recente nao e a atual, e o rastro dela recebia os
-    primeiros eventos da nova (conselhos, OC-2026-0007). Em outra branch,
-    escolhe pelo ORQUESTRADOR.md mais recentemente modificado cujo `estagio` nao
-    esteja fechado. Sem estado proprio: le so o que a skill ja grava.
-    """
-    raiz = raiz or raiz_repo()
-    base = os.path.join(raiz, "docs", "manutencao")
-    if not os.path.isdir(base):
-        return None
 
-    try:
-        entradas = sorted(os.listdir(base))
-    except OSError:
-        return None
-
-    # So a branch de ocorrencia decide: outra branch cujo ultimo segmento por acaso
-    # e o nome de uma pasta mantem a escolha de sempre.
-    branch = branch_atual(raiz)
-    oc = _BRANCH_OC.fullmatch(branch) if branch else None
-    if oc:
-        nome = branch.rsplit("/", 1)[-1]
-        if _tem_marca(os.path.join(base, nome)):
-            return os.path.join(base, nome)
-        for entrada in entradas:
-            if (entrada == oc.group(1) or entrada.startswith(oc.group(1) + "-")) and _tem_marca(
-                os.path.join(base, entrada)
-            ):
-                return os.path.join(base, entrada)
-        return None
-
+def _ocorrencias(base, entradas):
+    """(abertas, fechadas), cada uma em (mtime, pasta), pelas marcas que a skill grava."""
     abertas, fechadas = [], []
     for nome in entradas:
         pasta = os.path.join(base, nome)
@@ -523,10 +498,61 @@ def pasta_ocorrencia(raiz=None):
         fm = frontmatter(marca) if os.path.isfile(marca) else {}
         encerrada = fm.get("status") == "concluido" or fm.get("concluido_em") not in (None, "")
         (fechadas if encerrada else abertas).append((quando, pasta))
+    abertas.sort(reverse=True)
+    fechadas.sort(reverse=True)
+    return abertas, fechadas
+
+
+def pasta_ocorrencia(raiz=None):
+    """A pasta da ocorrencia em andamento, ou None.
+
+    Escolhe pelo ORQUESTRADOR.md (ou, antes do E2, pelo 00-OCORRENCIA.md) mais
+    recentemente modificado cujo `estagio` nao esteja fechado; sem aberta, o
+    mais recente fechado. Numa branch de ocorrencia (`fix|chore/<OC-ID>-<slug>`),
+    a pasta dela (pelo nome do ultimo segmento, senao pelo OC-ID, e so com o
+    `trabalho_id` da branch) vence quando aberta, e a fechada mais recente de
+    OUTRA ocorrencia nunca e escolhida: numa worktree nova, antes do
+    00-OCORRENCIA.md, a fechada recebia os primeiros eventos da nova (conselhos,
+    OC-2026-0007). A pasta fechada da branch so vale sem nenhuma aberta (o E5
+    dela); sem pasta e sem aberta, None. Sem estado proprio: le so o que a
+    skill ja grava.
+    """
+    raiz = raiz or raiz_repo()
+    base = os.path.join(raiz, "docs", "manutencao")
+    if not os.path.isdir(base):
+        return None
+
+    try:
+        entradas = sorted(os.listdir(base))
+    except OSError:
+        return None
+
+    abertas, fechadas = _ocorrencias(base, entradas)
+
+    # So a branch de ocorrencia decide: outra branch cujo ultimo segmento por acaso
+    # e o nome de uma pasta mantem a escolha de sempre.
+    branch = branch_atual(raiz)
+    oc = _BRANCH_OC.fullmatch(branch) if branch else None
+    if oc:
+        alvo = oc.group(1)
+        nomes = [branch.rsplit("/", 1)[-1]] + [e for e in entradas if e == alvo or e.startswith(alvo + "-")]
+        da_branch = None
+        for nome in nomes:
+            pasta = os.path.join(base, nome)
+            if not _tem_marca(pasta):
+                continue
+            if _id_declarado(pasta) not in (None, alvo):
+                # uma pasta da branch (ou do OC-ID) declara outro id: nada decide entre elas
+                return None
+            da_branch = da_branch or pasta
+        if da_branch and any(p == da_branch for _, p in abertas):
+            return da_branch
+        if abertas:
+            return abertas[0][1]
+        return da_branch
 
     for grupo in (abertas, fechadas):  # aberta ganha de fechada, sempre
         if grupo:
-            grupo.sort(reverse=True)
             return grupo[0][1]
     return None
 

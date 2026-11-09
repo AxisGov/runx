@@ -562,13 +562,33 @@ nova_oc "$PB/b" OC-2026-0007-nova OC-2026-0007 ORQUESTRADOR.md em_andamento
 caso_valor "branch-de-oc-acha-pelo-id-com-outro-slug" "$PB/b" "OC-2026-0007" "R.trabalho_id(R.pasta_ocorrencia())"
 repo_na_branch "$PB/c" chore/OC-2026-0006-fechada
 nova_oc "$PB/c" OC-2026-0008-aberta OC-2026-0008 ORQUESTRADOR.md em_andamento
-caso_valor "branch-da-fechada-vence-a-aberta" "$PB/c" "OC-2026-0006" "R.trabalho_id(R.pasta_ocorrencia())"
+caso_valor "branch-da-fechada-cede-a-aberta-com-orquestrador" "$PB/c" "OC-2026-0008" "R.trabalho_id(R.pasta_ocorrencia())"
 repo_na_branch "$PB/d" main
 nova_oc "$PB/d" OC-2026-0008-aberta OC-2026-0008 ORQUESTRADOR.md em_andamento
 caso_valor "fora-de-branch-de-oc-a-aberta-vence" "$PB/d" "OC-2026-0008" "R.trabalho_id(R.pasta_ocorrencia())"
 repo_na_branch "$PB/e" feature/OC-2026-0006-fechada
 nova_oc "$PB/e" OC-2026-0008-aberta OC-2026-0008 ORQUESTRADOR.md em_andamento
 caso_valor "branch-nao-oc-com-nome-da-fechada-nao-decide" "$PB/e" "OC-2026-0008" "R.trabalho_id(R.pasta_ocorrencia())"
+# Ocorrencia nova aberta sem worktree, numa branch de outra ocorrencia (com ou sem a pasta
+# dela, fechada): a aberta vence; a fechada da branch so vale sem nenhuma aberta (E5 dela).
+repo_na_branch "$PB/g" fix/OC-2026-0006-fechada
+nova_oc "$PB/g" OC-2026-0009-sem-worktree OC-2026-0009 00-OCORRENCIA.md em_andamento
+caso_valor "branch-de-oc-fechada-cede-a-aberta" "$PB/g" "OC-2026-0009" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/h" fix/OC-2026-0004-sem-pasta
+nova_oc "$PB/h" OC-2026-0009-sem-worktree OC-2026-0009 00-OCORRENCIA.md em_andamento
+caso_valor "branch-de-oc-sem-pasta-acha-a-aberta" "$PB/h" "OC-2026-0009" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/i" fix/OC-2026-0006-fechada
+caso_valor "branch-de-oc-fechada-sem-aberta-e-ela" "$PB/i" "OC-2026-0006" "R.trabalho_id(R.pasta_ocorrencia())"
+# A pasta pelo nome ou pelo OC-ID so vale se o trabalho_id dela e o da branch.
+repo_na_branch "$PB/j" fix/OC-2026-0007-nova
+nova_oc "$PB/j" OC-2026-0007-nova OC-2026-0008 00-OCORRENCIA.md em_andamento
+caso_valor "pasta-da-branch-com-outro-id-nao-vale" "$PB/j" "None" "R.pasta_ocorrencia()"
+nova_oc "$PB/j" OC-2026-0007-outra OC-2026-0007 00-OCORRENCIA.md em_andamento
+caso_valor "pasta-da-branch-com-outro-id-nao-cede-a-outra-do-oc" "$PB/j" "None" "R.pasta_ocorrencia()"
+repo_na_branch "$PB/k" fix/OC-2026-0007-sem-pasta
+nova_oc "$PB/k" OC-2026-0007-a OC-2026-0007 00-OCORRENCIA.md em_andamento
+nova_oc "$PB/k" OC-2026-0007-b OC-2026-0008 00-OCORRENCIA.md em_andamento
+caso_valor "pastas-do-oc-que-se-contradizem-nao-decidem" "$PB/k" "None" "R.pasta_ocorrencia()"
 # Worktree vinculada (.git arquivo, gitdir absoluto e relativo) e HEAD destacado.
 repo_na_branch "$PB/f" main
 git -C "$PB/f" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i

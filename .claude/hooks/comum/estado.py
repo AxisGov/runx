@@ -187,7 +187,10 @@ def garantir_ignorados(raiz):
 
     So o que nenhuma regra ignora ainda (`git check-ignore -q --no-index`), no
     arquivo que o proprio Git indica (`git rev-parse --git-path info/exclude`: numa
-    worktree vinculada, o do diretorio comum), sem duplicar linha. O derivado que o
+    worktree vinculada, o do diretorio comum), sem duplicar linha numa execucao (duas
+    sessoes ao mesmo tempo podem repetir uma linha, o que nao muda o que o Git
+    ignora). A regra leva o caminho desde a raiz do Git (`--show-prefix`): com
+    GIT_DIR e GIT_WORK_TREE e sem `.git` acima, a raiz da runx nao e a do Git. O derivado que o
     time versiona fica como esta: a regra nao o ignoraria nem limparia o status, e
     tira-lo do indice e decisao do time. Nunca toca o `.gitignore`. Sem Git ou com
     qualquer falha, segue: o derivado e cache e nunca trava o marco.
@@ -200,13 +203,17 @@ def garantir_ignorados(raiz):
                 ["git", "-C", raiz, *args], capture_output=True, text=True, timeout=5,
             )
 
+        r = git("rev-parse", "--show-prefix")
+        if r.returncode != 0:
+            return
+        prefixo = r.stdout.strip()
         faltam = []
         for caminho in DERIVADOS:
             r = git("check-ignore", "-q", "--no-index", caminho)
             if r.returncode not in (0, 1):
                 return  # sem Git, ou o Git falhou: nada a garantir
             if r.returncode == 1 and git("ls-files", "--error-unmatch", "--", caminho).returncode != 0:
-                faltam.append(caminho)
+                faltam.append(prefixo + caminho)
         if not faltam:
             return
         r = git("rev-parse", "--git-path", "info/exclude")
