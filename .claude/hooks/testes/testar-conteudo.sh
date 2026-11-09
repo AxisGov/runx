@@ -579,7 +579,7 @@ echo "== revisao por task no E3 =="
 # o commit seguinte so com ela era recusado (conselhos, OC-2026-0009).
 FIX="$S/references/03-fix.md"
 afirma revisao-chama-o-revisar "o 03-fix chama o revisar do núcleo com trabalho, task e arquivos" \
-  tem "$FIX" 'expx-revisao\.mjs" revisar --trabalho <OC-ID> --task <T-NN\.MM>'
+  tem "$FIX" 'expx-revisao\.mjs" revisar --trabalho "<OC-ID>" --task "<T-NN\.MM>"'
 afirma revisao-entre-aceite-e-conclusao "a revisão vem depois do critério de aceite e antes de marcar concluída" \
   python3 -c '
 import sys
@@ -594,7 +594,8 @@ afirma revisao-modo-pelo-leitor "o modo vem do leitor do núcleo, e desligada pu
 afirma revisao-quatro-saidas "as saídas 0, 1, 2 e 3 têm rota, e as classes de bloqueio do contrato aparecem" \
   bash -c 'for p in "Saída 0" "Saída 1" "Saída 2" "Saída 3" revisao_defeito revisao_contestada revisao_incompleta "Saída 64 ou 75"; do grep -q "$p" "$1" || exit 1; done' _ "$FIX"
 afirma revisao-na-raiz "o revisar grava na raiz do repositório, de qualquer subpasta" \
-  tem "$FIX" 'revisar --trabalho <OC-ID> --task <T-NN\.MM> --raiz "\$RAIZ" --arquivos'
+  tem "$FIX" 'revisar --trabalho "<OC-ID>" --task "<T-NN\.MM>" --raiz "\$RAIZ" --arquivos "<arquivos'
+# caminho com espaco sem aspas era dividido pelo shell e o revisar saia 64 (CodeAnt no katosmv/login#73)
 afirma revisao-sem-configuracao-nao-chama-o-leitor "sem .expx/fatiamento.json o padrão vale sem o leitor" \
   tem "$FIX" 'if \[ -f "\$RAIZ/\.expx/fatiamento\.json" \]'
 afirma passo-0b-derivados-ignorados "o Passo 0.b diz que os derivados ficam no exclude local" \
@@ -605,7 +606,10 @@ afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo esto
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
-  tem "$FIX" 'Outra saída\*\* \(`127` sem o `node`, por exemplo\): a revisão não rodou; trate como a saída 2\.'
+  tem "$FIX" 'Outra saída\*\* \(`127` sem o `node`, `70` erro interno do núcleo, ou a saída 1 sem a linha `<T-NN\.MM> achados`, por exemplo\): a revisão não rodou; trate como a saída 2\.'
+# a excecao nao tratada saia 1, o codigo de achados (CodeAnt no katosmv/login#73): so a linha prova o achado
+afirma revisao-saida-1-so-com-a-linha "a saída 1 só é achado com a última linha <T-NN.MM> achados" \
+  tem "$FIX" '\*\*Saída 1\*\* com a última linha `<T-NN\.MM> achados`'
 afirma revisao-nunca-rejeita "a skill nunca rejeita achado: só o desenvolvedor" \
   tem "$FIX" 'Só o desenvolvedor rejeita'
 afirma revisao-no-detalhe-da-conclusao "o resultado vai no detalhe do task_concluida, sem evento novo" \
