@@ -573,6 +573,21 @@ for f in list((raiz / "comum").glob("*.py")) + list((raiz / "runx").glob("*.py")
     assert j < 0 or i < j, f.name
 ' "$R"
 
+echo "== classe da sessao principal (expx 0.13.22) =="
+# A tripla que o `expx sessao <OC-ID>` le para imprimir o `claude --model ... --effort ...`: so o
+# que quem chama a skill declarar, nunca inferida, nunca mudada depois (escopo (a) do desenho).
+afirma classe-sessao-no-template "o template do 00-OCORRENCIA nasce com a tripla nula" \
+  bash -c 'for k in classe_sessao classe_sessao_por classe_sessao_justificativa; do grep -qx "$k: null" "$1" || exit 1; done' _ "$S/assets/TEMPLATE-ocorrencia.md"
+afirma classe-sessao-no-schema "o schema declara a tripla, o enum e quem declara" \
+  bash -c 'f="$1"; grep -q "classe_sessao: null" "$f" && grep -q "mecanico_triagem.*raciocinio_normal.*profundo_excepcional" "$f" && grep -q "classe_sessao_por" "$f" && grep -qi "nunca é inferida" "$f"' _ "$S/references/00-schema.md"
+afirma classe-sessao-so-declarada "o E1 grava a classe só quando o pedido a declara, e nunca a muda" \
+  tem "$S/references/01-investigacao.md" "classe_sessao.*só quando o pedido a declara"
+
+# Modo subagente (Conselhos, OC-2026-0011): os hooks seguem o `cwd` do payload, que `git -C`/`cd`
+# no Bash nao mudam; os eventos caiam no checkout principal (bancada do ExpxDev 0.13.22).
+afirma subagente-fora-da-worktree "o SKILL.md proíbe o subagente comum com a worktree diferente do cwd" \
+  bash -c 'grep -q "subagente comum" "$1" && grep -q "git -C" "$1" && grep -q "expx sessao <OC-ID>" "$1"' _ "$S/SKILL.md"
+
 echo "== revisao por task no E3 =="
 # O lado da skill do contrato expx-revisao (desenho de 2026-10-18, 4.2): sem este
 # passo, o E1 da mergex commitava a task sem a evidencia e, no modo obrigatoria,

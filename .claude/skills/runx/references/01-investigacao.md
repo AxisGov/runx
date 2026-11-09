@@ -84,6 +84,8 @@ docs/manutencao/<OC-ID>-<slug>/
 
 Preencha `00-OCORRENCIA.md` pelo contrato de entrada do SKILL.md. O relato do cliente é **copiado literalmente**, sem reescrever, sem corrigir, sem resumir. Se não houver identificador, gere `OC-<AAAA>-<NNNN>` sequencial olhando `docs/manutencao/` e `docs/relatorios/` — obtenha o ano com `date +%Y` do sistema, nunca de memória.
 
+**A classe da sessão principal** (`classe_sessao`, `classe_sessao_por` e `classe_sessao_justificativa`, em `references/00-schema.md`) só quando o pedido a declara, com quem declarou e, em `profundo_excepcional`, a justificativa. Nunca a infira do tamanho nem do tipo da ocorrência, e nunca a mude depois: sem declaração, as três ficam `null`.
+
 **Registre o tipo já classificado** no `00-OCORRENCIA.md`. Se a classificação
 inicial inclui `bug` como opção plausível, registre `bug` de forma conservadora
 até a evidência descartá-lo; isso preserva os portões de reprodução e prova.
