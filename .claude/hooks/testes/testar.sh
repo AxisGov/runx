@@ -589,6 +589,27 @@ repo_na_branch "$PB/k" fix/OC-2026-0007-sem-pasta
 nova_oc "$PB/k" OC-2026-0007-a OC-2026-0007 00-OCORRENCIA.md em_andamento
 nova_oc "$PB/k" OC-2026-0007-b OC-2026-0008 00-OCORRENCIA.md em_andamento
 caso_valor "pastas-do-oc-que-se-contradizem-nao-decidem" "$PB/k" "None" "R.pasta_ocorrencia()"
+# A aberta que veio da main (commitada, de outro trabalho) nao e a desta worktree: so a criada
+# nesta arvore, ainda fora do HEAD, vale sem a pasta da branch (conselhos#292, OC-0008/0011).
+comita() { git -C "$1" add -A && git -C "$1" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -qm base; }
+repo_na_branch "$PB/l" fix/OC-2026-0012-nova
+nova_oc "$PB/l" OC-2026-0011-aberta-na-main OC-2026-0011 ORQUESTRADOR.md em_andamento
+comita "$PB/l"
+caso_valor "aberta-commitada-de-outra-oc-nao-recebe-a-nova" "$PB/l" "None" "R.pasta_ocorrencia()"
+nova_oc "$PB/l" OC-2026-0013-sem-worktree OC-2026-0013 00-OCORRENCIA.md em_andamento
+caso_valor "aberta-criada-nesta-arvore-vale-sem-a-pasta" "$PB/l" "OC-2026-0013" "R.trabalho_id(R.pasta_ocorrencia())"
+repo_na_branch "$PB/m" fix/OC-2026-0006-fechada
+nova_oc "$PB/m" OC-2026-0011-aberta-na-main OC-2026-0011 ORQUESTRADOR.md em_andamento
+comita "$PB/m"
+caso_valor "fechada-da-branch-vence-a-aberta-commitada" "$PB/m" "OC-2026-0006" "R.trabalho_id(R.pasta_ocorrencia())"
+# Git que falha (GIT_DIR invalido) nao e "sem commit": sem saber de onde a pasta veio, nenhuma.
+gq=$(cd "$PB/l" && GIT_DIR="$PB/nao-existe" python3 -c "
+import sys; sys.path.insert(0, '$H/comum')
+import expx_rastro as R
+print(R._fora_do_head(R.raiz_repo(), [p for _, p in R._ocorrencias('docs/manutencao', sorted(__import__('os').listdir('docs/manutencao')))[0]]))
+" 2>&1)
+if [ "$gq" = "[]" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "git-falhando-nao-escolhe-nenhuma" "$gq"
+else falhou=$((falhou+1)); printf '  FALHA %-45s real=%s\n' "git-falhando-nao-escolhe-nenhuma" "$gq"; fi
 # Worktree vinculada (.git arquivo, gitdir absoluto e relativo) e HEAD destacado.
 repo_na_branch "$PB/f" main
 git -C "$PB/f" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i

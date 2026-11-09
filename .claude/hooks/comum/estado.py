@@ -206,7 +206,7 @@ def garantir_ignorados(raiz):
         r = git("rev-parse", "--show-prefix")
         if r.returncode != 0:
             return
-        prefixo = r.stdout.strip()
+        prefixo = r.stdout.rstrip("\n")  # a pasta pode comecar com espaco: so a quebra sai
         faltam = []
         for caminho in DERIVADOS:
             r = git("check-ignore", "-q", "--no-index", caminho)
@@ -342,7 +342,13 @@ def executar(args):
     trabalho, fase, escritas = planejar_derivado(raiz, ocorrencia, agora, args.tipo, args.id, fase_nova)
     if tem_orquestrador:
         atualizar_orquestrador(caminho_orquestrador, fase_nova, args.tipo, agora)
-    gravar(escritas, raiz)
+    # O derivado e cache, refeito dos artefatos no SessionStart: a gravacao dele que falha
+    # depois de o ORQUESTRADOR.md ter avancado nao pode deixar o marco pela metade, sem o
+    # evento (CodeAnt no conselhos#292, r4517966249). O aviso vai ao stderr.
+    try:
+        gravar(escritas, raiz)
+    except OSError as erro:
+        sys.stderr.write("estado.py: derivado nao gravado (%s); o marco seguiu\n" % erro)
     CLI_RASTRO.gravar_mecanico(
         tipo=args.tipo, trabalho=trabalho, fase=fase, identificador=args.id,
         resultado=args.resultado, raiz=raiz,

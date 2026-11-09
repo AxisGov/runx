@@ -503,6 +503,39 @@ def _ocorrencias(base, entradas):
     return abertas, fechadas
 
 
+def _fora_do_head(raiz, pastas):
+    """As pastas, na ordem dada, cujas marcas (ORQUESTRADOR.md e 00-OCORRENCIA.md) nao estao no HEAD.
+
+    Sem Git, ou com o Git falhando, nenhuma: sem saber de onde a pasta veio, nao se escolhe.
+    """
+    if not pastas:
+        return []
+    try:
+        import subprocess
+
+        def git(*args):
+            return subprocess.run(["git", "-C", raiz, *args], capture_output=True, text=True, timeout=5)
+
+        head = git("rev-parse", "--verify", "-q", "HEAD").returncode
+        if head == 1:
+            no_head = set()  # repositorio sem commit (so o 1 diz isso): nada esta no HEAD
+        elif head != 0:
+            return []  # o Git falhou (128: GIT_DIR invalido, repositorio quebrado)
+        else:
+            proc = git("ls-tree", "-r", "-z", "--name-only", "HEAD", "--", "docs/manutencao")
+            if proc.returncode != 0:
+                return []
+            no_head = set(proc.stdout.split("\0"))
+    except Exception:
+        return []
+    saida = []
+    for pasta in pastas:
+        relativa = os.path.relpath(pasta, raiz).replace(os.sep, "/")
+        if not any(relativa + "/" + m in no_head for m in ("ORQUESTRADOR.md", "00-OCORRENCIA.md")):
+            saida.append(pasta)
+    return saida
+
+
 def pasta_ocorrencia(raiz=None):
     """A pasta da ocorrencia em andamento, ou None.
 
@@ -510,12 +543,12 @@ def pasta_ocorrencia(raiz=None):
     recentemente modificado cujo `estagio` nao esteja fechado; sem aberta, o
     mais recente fechado. Numa branch de ocorrencia (`fix|chore/<OC-ID>-<slug>`),
     a pasta dela (pelo nome do ultimo segmento, senao pelo OC-ID, e so com o
-    `trabalho_id` da branch) vence quando aberta, e a fechada mais recente de
-    OUTRA ocorrencia nunca e escolhida: numa worktree nova, antes do
-    00-OCORRENCIA.md, a fechada recebia os primeiros eventos da nova (conselhos,
-    OC-2026-0007). A pasta fechada da branch so vale sem nenhuma aberta (o E5
-    dela); sem pasta e sem aberta, None. Sem estado proprio: le so o que a
-    skill ja grava.
+    `trabalho_id` da branch) vence quando aberta, e a de OUTRA ocorrencia que ja
+    esta no HEAD (aberta ou fechada, vinda da principal) nunca e escolhida: numa
+    worktree nova, antes do 00-OCORRENCIA.md, ela recebia os primeiros eventos da
+    nova (conselhos, OC-2026-0007 e #292). Sem a pasta da branch aberta, vale a
+    aberta criada nesta arvore (fora do HEAD), senao a pasta fechada da branch (o
+    E5 dela), senao None. Sem estado proprio: le so o que a skill ja grava.
     """
     raiz = raiz or raiz_repo()
     base = os.path.join(raiz, "docs", "manutencao")
@@ -547,8 +580,12 @@ def pasta_ocorrencia(raiz=None):
             da_branch = da_branch or pasta
         if da_branch and any(p == da_branch for _, p in abertas):
             return da_branch
-        if abertas:
-            return abertas[0][1]
+        # Sem a pasta da branch aberta, so vale a aberta criada NESTA arvore (a ocorrencia
+        # aberta sem worktree): a que ja esta no HEAD veio da principal e e de outro
+        # trabalho (conselhos#292: OC-0008 e OC-0011 em andamento na main).
+        novas = _fora_do_head(raiz, [p for _, p in abertas])
+        if novas:
+            return novas[0]
         return da_branch
 
     for grupo in (abertas, fechadas):  # aberta ganha de fechada, sempre

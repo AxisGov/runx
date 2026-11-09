@@ -357,6 +357,28 @@ afirma derivados-relativos-a-raiz-do-git "fora da raiz do Git, a regra leva o pr
   bash -c '[ "$1" -eq 0 ] && grep -qx "sub/.expx/handoff.md" "$2/git/info/exclude" && \
     ! GIT_DIR="$2/git" GIT_WORK_TREE="$2/w" git -C "$2/w" status --porcelain --untracked-files=all | grep -q "\.expx/"' _ "$cod_gs" "$GS"
 
+# Pasta da raiz com espaco no comeco: o prefixo do Git e o caminho, sem aparar.
+GE="$T/separado-espaco"; mkdir -p "$GE/w/ sub"; git init -q --bare "$GE/git"
+cp -R "$G/docs" "$GE/w/ sub/docs"; mkdir -p "$GE/w/ sub/.expx"
+(cd "$GE/w/ sub" && GIT_DIR="$GE/git" GIT_WORK_TREE="$GE/w" python3 "$HELPER" reconstruir \
+  --ocorrencia "$GE/w/ sub/docs/manutencao/OC-2026-0500-g" --agora 2026-10-27T10:00:00Z >/dev/null 2>&1); cod_ge=$?
+afirma derivados-prefixo-com-espaco "o prefixo com espaço no começo não é aparado" \
+  bash -c '[ "$1" -eq 0 ] && grep -qx " sub/.expx/handoff.md" "$2/git/info/exclude"' _ "$cod_ge" "$GE"
+
+# O derivado e cache: a gravacao dele que falha nunca derruba o marco, que ja avancou o
+# ORQUESTRADOR.md (CodeAnt no conselhos#292, r4517966249).
+if [ "$(id -u)" -ne 0 ]; then
+  GF="$T/derivado-falha"; mkdir -p "$GF"; git init -q "$GF"; cp -R "$G/docs" "$GF/docs"; mkdir -p "$GF/.expx"
+  printf '%s\n' '{"expx_estado":1,"trabalho":"OC-2026-0500","fase":"e3"}' > "$GF/.expx/estado.json"
+  chmod 555 "$GF/.expx"
+  saida_gf=$(cd "$GF" && python3 "$HELPER" marco --ocorrencia "$GF/docs/manutencao/OC-2026-0500-g" --tipo transicao \
+    --id E3-E4 --resultado e4 --agora 2026-10-27T11:00:00Z 2>&1); cod_gf=$?
+  chmod 755 "$GF/.expx"
+  afirma derivado-que-falha-nao-derruba-o-marco "o marco sai 0, avança o ORQUESTRADOR, grava o evento e avisa no stderr" \
+    bash -c '[ "$1" -eq 0 ] && grep -q "^estagio: e4$" "$3/docs/manutencao/OC-2026-0500-g/ORQUESTRADOR.md" && \
+      grep -q "E3-E4" "$3"/docs/eventos/*.jsonl && printf "%s" "$2" | grep -q "estado.py: derivado"' _ "$cod_gf" "$saida_gf" "$GF"
+fi
+
 # Derivado ja versionado pelo time: a regra no exclude nao o ignoraria nem limparia o
 # status. Ele fica como esta, e so o outro entra.
 GT="$T/comgit-versionado"; mkdir -p "$GT"; git init -q "$GT"; cp -R "$G/docs" "$GT/docs"; mkdir -p "$GT/.expx"
