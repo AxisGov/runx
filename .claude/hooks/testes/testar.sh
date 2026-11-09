@@ -238,6 +238,42 @@ caso "bloqueio barra nao_executada" 2 "$H/runx/task-so-fecha-verde.py" "$J"
 J=$(mk concluida parcial "null"); J=${J/\"file_path\": \"\"/\"file_path\": \"$W/$T\"}
 caso "parcial sem teste barra"  2 "$H/runx/task-so-fecha-verde.py" "$J"
 rm -f "$W/.expx/hooks.json"
+# A evidencia da revisao por task (desenho de 2026-10-18, 4.2): em `obrigatoria`, a task que ESTA
+# escrita leva a `concluida` precisa de docs/entregas/<OC-ID>/revisao/<T>.json, arquivo comum. O
+# modo vem do leitor do nucleo; sem ele, ou com ele falhando, o hook nao exige (o E3 ja bloqueia).
+EN="$W/.expx/marketplace/plugins/expx/nucleo/scripts"; EV="$W/docs/entregas/OC-2026-0142/revisao"
+leitor() { rm -rf "$EN"; [ "$1" = nenhum ] && return 0; mkdir -p "$EN"
+  if [ "$1" = falha ]; then printf 'process.exit(1);\n' > "$EN/expx-fatiamento.mjs"
+  else printf 'process.stdout.write("EXPX_ENTREGA=sprint\\nEXPX_REVISAO_POR_TASK=%s\\n");\n' "$1" > "$EN/expx-fatiamento.mjs"; fi; }
+evid() { rm -rf "$W/docs/entregas"; case "$1" in
+  arquivo) mkdir -p "$EV"; printf '{}' > "$EV/T-01.01.json" ;;
+  link) mkdir -p "$EV"; printf '{}' > "$W/alvo.json"; ln -s ../../../../alvo.json "$EV/T-01.01.json" ;; esac; }
+caso_aviso() { # caso_aviso <nome> <0|1: espera o aviso da evidencia> <json>
+  local saida; saida=$(printf '%s' "$3" | (cd "$W" && python3 "$H/runx/task-so-fecha-verde.py") 2>&1)
+  case "$saida" in *"sem evidencia da revisao por task"*) r=1 ;; *) r=0 ;; esac
+  if [ "$r" = "$2" ]; then ok=$((ok+1)); printf '  ok   %-46s aviso=%s\n' "$1" "$r"
+  else falhou=$((falhou+1)); printf '  FALHA %-45s esperado=%s real=%s\n     %s\n' "$1" "$2" "$r" "$(printf '%s' "$saida" | head -3)"; fi
+}
+J=$(mk concluida verde "Chama endpoint"); J=${J/\"file_path\": \"\"/\"file_path\": \"$W/$T\"}
+escreve_tasks "Pedido de 60kg cobra 120"
+leitor obrigatoria; evid nenhuma
+caso_aviso "evidencia: obrigatoria sem ela avisa"      1 "$J"
+evid arquivo; caso_aviso "evidencia: arquivo comum silencia"   0 "$J"
+evid link;    caso_aviso "evidencia: link nao vale"            1 "$J"
+evid nenhuma
+leitor se_disponivel; caso_aviso "evidencia: se_disponivel nao exige" 0 "$J"
+leitor falha;   caso_aviso "evidencia: leitor falhando nao exige"   0 "$J"
+leitor nenhum;  caso_aviso "evidencia: sem leitor nao exige"        0 "$J"
+leitor obrigatoria
+# so a transicao: a task ja concluida no disco nao e cobrada de novo
+sed -i.bak 's/^    status: em_andamento$/    status: concluida/' "$OC/sprint-01/tasks.md"
+caso_aviso "evidencia: ja concluida no disco nao exige" 0 "$J"
+escreve_tasks "Pedido de 60kg cobra 120"
+mkdir -p "$W/.expx"; echo '{"hooks":{"task-so-fecha-verde":"bloqueio"}}' > "$W/.expx/hooks.json"
+caso "evidencia: modo bloqueio barra"        2 "$H/runx/task-so-fecha-verde.py" "$J"
+evid arquivo
+caso "evidencia: bloqueio com ela passa"     0 "$H/runx/task-so-fecha-verde.py" "$J"
+rm -f "$W/.expx/hooks.json" "$OC/sprint-01/tasks.md.bak" "$W/alvo.json"; evid nenhuma; leitor nenhum
 
 echo "== task-reivindicada =="
 # trabalho_id() le 01-CAUSA-RAIZ.md/tasks.md, ja gravados nesta fixture pelas

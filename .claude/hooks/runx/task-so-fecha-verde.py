@@ -4,7 +4,10 @@
 `PreToolUse` em Write|Edit sobre `tasks.md`. Le a escrita PROPOSTA — nao o
 arquivo em disco — porque o que interessa e o que esta prestes a ser gravado.
 
-Regras 4 e 9 do SKILL.md: nao existe "concluido com ressalva".
+Regras 4 e 9 do SKILL.md: nao existe "concluido com ressalva". Com
+`revisao_por_task.modo: obrigatoria` (pelo leitor do nucleo), a task que a escrita
+leva a `concluida` precisa tambem da evidencia da revisao por task
+(docs/entregas/<OC-ID>/revisao/<T-NN.MM>.json, arquivo comum; DR-106).
 Nasce em AVISO. Falha ABERTA.
 """
 
@@ -18,6 +21,56 @@ import expx_rastro as R  # noqa: E402
 
 NOME = "task-so-fecha-verde"
 ALVO = re.compile(r"(?:^|/)docs/manutencao/([^/]+)/sprint-[^/]+/tasks\.md$")
+# o id do contrato expx-revisao, que vira nome de arquivo: nada alem disso
+TASK_ID = re.compile(r"^T-(?:\d+|\d{2}\.\d{2})$")
+LEITOR = (".expx", "marketplace", "plugins", "expx", "nucleo", "scripts", "expx-fatiamento.mjs")
+
+
+def modo_revisao(raiz):
+    """O `revisao_por_task.modo` que o leitor do nucleo imprime, ou None quando nao da para saber.
+
+    Sem o leitor, sem `node`, com o leitor falhando ou com a linha fora da forma, o modo e
+    desconhecido e o hook nao exige a evidencia: o passo 8 do 03-fix ja bloqueia com
+    `prerequisito_ausente`, e o aviso aqui seria falso.
+    """
+    leitor = os.path.join(raiz, *LEITOR)
+    if not os.path.isfile(leitor):
+        return None
+    try:
+        import subprocess
+
+        proc = subprocess.run(["node", leitor, "--formato", "env", "--raiz", raiz],
+                              capture_output=True, text=True, timeout=10)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    for linha in proc.stdout.splitlines():
+        if linha.startswith("EXPX_REVISAO_POR_TASK="):
+            modo = linha.split("=", 1)[1]
+            return modo if modo in ("obrigatoria", "se_disponivel", "desligada") else None
+    return None
+
+
+def concluidas_no_disco(caminho_abs):
+    """As ids `concluida` no tasks.md de hoje: o antes da escrita. Ausente ou ilegivel, nenhuma."""
+    try:
+        with open(caminho_abs, "r", encoding="utf-8") as fh:
+            texto = fh.read()
+    except (OSError, UnicodeDecodeError):
+        return set()
+    fm = R._parse(bloco_yaml(texto))
+    return {t.get("id") for t in R.lista(fm.get("tasks")) if isinstance(t, dict) and t.get("status") == "concluida"}
+
+
+def tem_evidencia(raiz, trabalho, tid):
+    """docs/entregas/<trabalho>/revisao/<tid>.json como arquivo comum: link nao vale."""
+    import stat
+
+    try:
+        return stat.S_ISREG(os.lstat(os.path.join(raiz, "docs", "entregas", trabalho, "revisao", f"{tid}.json")).st_mode)
+    except OSError:
+        return False
 
 
 def conteudo_proposto(evento, caminho_abs):
@@ -108,6 +161,18 @@ def main():
             faltas.append("`teste_funcional` vazio")
         if faltas:
             problemas.append(f"{tid}: " + ", ".join(faltas))
+
+    # A evidencia da revisao por task (desenho de 2026-10-18, 4.2), so na transicao: a task
+    # que ESTA escrita leva a `concluida`. Uma edicao de task ja concluida nao a cobra de novo.
+    antes = concluidas_no_disco(os.path.join(raiz, caminho))
+    novas = [t.get("id") for t in tasks if t.get("status") == "concluida" and t.get("id") not in antes]
+    novas = [tid for tid in novas if isinstance(tid, str) and TASK_ID.match(tid)]
+    trabalho = R.trabalho_id(os.path.join(raiz, "docs", "manutencao", m.group(1))) if novas else None
+    if novas and trabalho and modo_revisao(raiz) == "obrigatoria":
+        for tid in novas:
+            if not tem_evidencia(raiz, trabalho, tid):
+                problemas.append(f"{tid}: sem evidencia da revisao por task (docs/entregas/{trabalho}/revisao/{tid}.json), "
+                                 "em modo obrigatoria: rode o passo 8 do 03-fix antes de concluir")
 
     if not problemas:
         sys.exit(0)
