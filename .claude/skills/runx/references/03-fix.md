@@ -78,14 +78,15 @@ Para CADA task, exatamente nesta ordem, sem inverter nenhum passo:
 7. Verifique **de fato** o `criterio_aceite` da task — não presuma que ele decorre do teste verde.
 8. **Revisão por task.** Com o critério de aceite verificado, e antes de marcar a task concluída, rode a revisão por task do núcleo do expx (contrato `expx-revisao`). A evidência que ela grava, `docs/entregas/<OC-ID>/revisao/<T-NN.MM>.json`, entra no commit da task pelo E1 da mergex, que só a aceita junto do produto da task: rodar a revisão depois do commit não cria evidência para ele, e um commit só com ela é recusado.
 
-   **Primeiro, o modo.** Sem `.expx/fatiamento.json`, o leitor não roda e vale o padrão, `se_disponivel`. Com o arquivo, o modo é o `revisao_por_task.modo` que o leitor imprime:
+   **Primeiro, o modo.** Com o leitor do núcleo instalado, ele roda sempre, e o modo é o `revisao_por_task.modo` que ele imprime: sem `.expx/fatiamento.json`, ele imprime o padrão, `se_disponivel`; uma pasta ou um link quebrado no lugar do arquivo o fazem falhar.
 
    ```
    RAIZ="$(git rev-parse --show-toplevel)"; N="$RAIZ/.expx/marketplace/plugins/expx/nucleo/scripts"
-   if [ -f "$RAIZ/.expx/fatiamento.json" ]; then node "$N/expx-fatiamento.mjs" --formato json --raiz "$RAIZ"; fi
+   if [ -f "$N/expx-fatiamento.mjs" ]; then node "$N/expx-fatiamento.mjs" --formato json --raiz "$RAIZ"
+   elif [ -e "$RAIZ/.expx/fatiamento.json" ] || [ -L "$RAIZ/.expx/fatiamento.json" ]; then echo "sem leitor"; fi
    ```
 
-   Com o arquivo, mas sem o leitor ou com o leitor falhando, o modo não pode ser conhecido: não rode a revisão, a task não fecha, e o bloqueio é `prerequisito_ausente` ("atualize o expx"). Com `desligada`, pule o resto deste passo.
+   Com o leitor falhando, ou sem o leitor e com qualquer entrada `.expx/fatiamento.json` (arquivo, pasta ou link; o bloco imprime `sem leitor`), o modo não pode ser conhecido: não rode a revisão, a task não fecha, e o bloqueio é `prerequisito_ausente` ("atualize o expx"). Sem o leitor e sem entrada nenhuma, vale o padrão, `se_disponivel` (limite: sem o leitor, uma pasta sem permissão de leitura esconde o arquivo, e vale o padrão). Com `desligada`, pule o resto deste passo.
 
    **Depois, só com `se_disponivel` ou `obrigatoria`, a revisão.** Sem o `expx-revisao.mjs`, trate como a saída 2.
 

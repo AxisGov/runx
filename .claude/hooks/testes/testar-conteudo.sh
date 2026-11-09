@@ -596,8 +596,32 @@ afirma revisao-quatro-saidas "as saídas 0, 1, 2 e 3 têm rota, e as classes de 
 afirma revisao-na-raiz "o revisar grava na raiz do repositório, de qualquer subpasta" \
   tem "$FIX" 'revisar --trabalho "<OC-ID>" --task "<T-NN\.MM>" --raiz "\$RAIZ" --arquivos "<arquivos'
 # caminho com espaco sem aspas era dividido pelo shell e o revisar saia 64 (CodeAnt no katosmv/login#73)
-afirma revisao-sem-configuracao-nao-chama-o-leitor "sem .expx/fatiamento.json o padrão vale sem o leitor" \
-  tem "$FIX" 'if \[ -f "\$RAIZ/\.expx/fatiamento\.json" \]'
+# O leitor decide a presenca (lstat: pasta e link quebrado sao entrada invalida); o `[ -f ]`
+# da skill era falso para os dois e pulava o leitor (CodeAnt no katosmv/login#73, r4518931484).
+afirma revisao-leitor-roda-sempre "com o leitor instalado, ele roda sempre; sem ele, qualquer entrada é modo desconhecido" \
+  tem "$FIX" 'if \[ -f "\$N/expx-fatiamento\.mjs" \]; then node "\$N/expx-fatiamento\.mjs" --formato json --raiz "\$RAIZ"$'
+bloco_modo() { awk '/\*\*Primeiro, o modo\.\*\*/{p=1} p && /^ *```/{n++; if (n == 2) exit; next} p && n == 1 {sub(/^   /, ""); print}' "$1"; }
+modo_em() { # modo_em <com-leitor|sem-leitor> <ausente|pasta|link|arquivo> -> stdout do bloco + "rc=<n>" + "leitor" se rodou
+  local d; d="$(mktemp -d)"; git -C "$d" init -q
+  local n="$d/.expx/marketplace/plugins/expx/nucleo/scripts"; mkdir -p "$n" "$d/.expx"
+  [ "$1" = com-leitor ] && printf 'import { writeFileSync } from "node:fs"; writeFileSync(process.argv[1] + ".rodou", ""); process.exit(1);\n' > "$n/expx-fatiamento.mjs"
+  case "$2" in pasta) mkdir "$d/.expx/fatiamento.json" ;; link) ln -s nao-existe "$d/.expx/fatiamento.json" ;; arquivo) echo '{}' > "$d/.expx/fatiamento.json" ;; esac
+  (cd "$d" && bash -c "$(bloco_modo "$FIX")"; echo "rc=$?"; [ -e "$n/expx-fatiamento.mjs.rodou" ] && echo leitor)
+  rm -rf "$d"
+}
+export -f bloco_modo modo_em; export FIX
+afirma revisao-leitor-roda-com-pasta "pasta no lugar do fatiamento.json: o leitor roda (e falha)" \
+  bash -c '[ "$(modo_em com-leitor pasta | tr "\n" " ")" = "rc=1 leitor " ]'
+afirma revisao-leitor-roda-com-link-quebrado "link quebrado no lugar do fatiamento.json: o leitor roda" \
+  bash -c '[ "$(modo_em com-leitor link | tr "\n" " ")" = "rc=1 leitor " ]'
+afirma revisao-leitor-roda-sem-arquivo "sem fatiamento.json, o leitor roda e imprime o padrão" \
+  bash -c '[ "$(modo_em com-leitor ausente | tr "\n" " ")" = "rc=1 leitor " ]'
+afirma revisao-sem-leitor-com-pasta "sem o leitor, pasta no lugar do arquivo é modo desconhecido" \
+  bash -c '[ "$(modo_em sem-leitor pasta | tr "\n" " ")" = "sem leitor rc=0 " ]'
+afirma revisao-sem-leitor-com-link "sem o leitor, link quebrado é modo desconhecido" \
+  bash -c '[ "$(modo_em sem-leitor link | tr "\n" " ")" = "sem leitor rc=0 " ]'
+afirma revisao-sem-leitor-sem-arquivo "sem o leitor e sem entrada nenhuma, nada é impresso (vale o padrão)" \
+  bash -c '[ "$(modo_em sem-leitor ausente | tr "\n" " ")" = "rc=0 " ]'
 afirma passo-0b-derivados-ignorados "o Passo 0.b diz que os derivados ficam no exclude local" \
   tem "$S/references/01-investigacao.md" 'estado\.py.*info/exclude'
 afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo estourado no E3 nem no E4" \
