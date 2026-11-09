@@ -608,8 +608,23 @@ import sys; sys.path.insert(0, '$H/comum')
 import expx_rastro as R
 print(R._fora_do_head(R.raiz_repo(), [p for _, p in R._ocorrencias('docs/manutencao', sorted(__import__('os').listdir('docs/manutencao')))[0]]))
 " 2>&1)
-if [ "$gq" = "[]" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "git-falhando-nao-escolhe-nenhuma" "$gq"
+if [ "$gq" = "None" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "git-falhando-nao-escolhe-nenhuma" "$gq"
 else falhou=$((falhou+1)); printf '  FALHA %-45s real=%s\n' "git-falhando-nao-escolhe-nenhuma" "$gq"; fi
+# Git falhando tambem nao cai na fechada da branch (CodeRabbit no #19): sem saber, nenhuma.
+nova_oc "$PB/m" OC-2026-0013-sem-worktree OC-2026-0013 00-OCORRENCIA.md em_andamento
+gf=$(cd "$PB/m" && GIT_DIR="$PB/nao-existe" python3 -c "
+import sys; sys.path.insert(0, '$H/comum')
+import expx_rastro as R
+print(R.pasta_ocorrencia())
+" 2>&1)
+if [ "$gf" = "None" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "git-falhando-nao-cai-na-fechada-da-branch" "$gf"
+else falhou=$((falhou+1)); printf '  FALHA %-45s real=%s\n' "git-falhando-nao-cai-na-fechada-da-branch" "$gf"; fi
+# Branch orfa num repositorio com commits: o rev-parse sai 1, mas nao e "sem commit" (CodeAnt no #19).
+repo_na_branch "$PB/n" main
+nova_oc "$PB/n" OC-2026-0011-aberta-na-main OC-2026-0011 ORQUESTRADOR.md em_andamento
+comita "$PB/n"
+git -C "$PB/n" symbolic-ref HEAD refs/heads/fix/OC-2026-0012-orfa
+caso_valor "branch-orfa-nao-trata-a-aberta-da-main-como-nova" "$PB/n" "None" "R.pasta_ocorrencia()"
 # Worktree vinculada (.git arquivo, gitdir absoluto e relativo) e HEAD destacado.
 repo_na_branch "$PB/f" main
 git -C "$PB/f" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -q --allow-empty -m i

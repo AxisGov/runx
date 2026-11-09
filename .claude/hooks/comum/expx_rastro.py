@@ -506,7 +506,9 @@ def _ocorrencias(base, entradas):
 def _fora_do_head(raiz, pastas):
     """As pastas, na ordem dada, cujas marcas (ORQUESTRADOR.md e 00-OCORRENCIA.md) nao estao no HEAD.
 
-    Sem Git, ou com o Git falhando, nenhuma: sem saber de onde a pasta veio, nao se escolhe.
+    None quando nao da para saber (Git falhando, HEAD que nao resolve num repositorio com
+    commits, como a branch orfa): sem saber de onde a pasta veio, nao se escolhe nenhuma,
+    nem a fechada da branch.
     """
     if not pastas:
         return []
@@ -518,16 +520,20 @@ def _fora_do_head(raiz, pastas):
 
         head = git("rev-parse", "--verify", "-q", "HEAD").returncode
         if head == 1:
-            no_head = set()  # repositorio sem commit (so o 1 diz isso): nada esta no HEAD
+            # o 1 tambem vem de branch orfa ou ref quebrada: "sem commit" so sem ref nenhuma
+            refs = git("for-each-ref", "--count=1", "--format=%(refname)")
+            if refs.returncode != 0 or refs.stdout.strip():
+                return None
+            no_head = set()  # repositorio sem commit: nada esta no HEAD
         elif head != 0:
-            return []  # o Git falhou (128: GIT_DIR invalido, repositorio quebrado)
+            return None  # o Git falhou (128: GIT_DIR invalido, repositorio quebrado)
         else:
             proc = git("ls-tree", "-r", "-z", "--name-only", "HEAD", "--", "docs/manutencao")
             if proc.returncode != 0:
-                return []
+                return None
             no_head = set(proc.stdout.split("\0"))
     except Exception:
-        return []
+        return None
     saida = []
     for pasta in pastas:
         relativa = os.path.relpath(pasta, raiz).replace(os.sep, "/")
@@ -584,6 +590,8 @@ def pasta_ocorrencia(raiz=None):
         # aberta sem worktree): a que ja esta no HEAD veio da principal e e de outro
         # trabalho (conselhos#292: OC-0008 e OC-0011 em andamento na main).
         novas = _fora_do_head(raiz, [p for _, p in abertas])
+        if novas is None:
+            return None
         if novas:
             return novas[0]
         return da_branch
