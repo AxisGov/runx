@@ -431,23 +431,78 @@ def _enxuga(no):
 # ------------------------------------------------------- ocorrencia em foco
 
 
+def branch_atual(raiz):
+    """A branch do checkout em <raiz>, lida do HEAD sem chamar o git; None se destacado ou ilegivel.
+
+    Numa worktree vinculada `.git` e arquivo (`gitdir: <...>`), e o HEAD e o dela.
+    """
+    g = os.path.join(raiz, ".git")
+    try:
+        if os.path.isfile(g):
+            with open(g, encoding="utf-8") as fh:
+                linha = fh.readline().strip()
+            if not linha.startswith("gitdir: "):
+                return None
+            g = linha[len("gitdir: "):]
+            if not os.path.isabs(g):
+                g = os.path.join(raiz, g)
+        with open(os.path.join(g, "HEAD"), encoding="utf-8") as fh:
+            head = fh.readline().strip()
+    except (OSError, UnicodeDecodeError):
+        return None
+    prefixo = "ref: refs/heads/"
+    if not head.startswith(prefixo) or len(head) == len(prefixo):
+        return None
+    return head[len(prefixo):]
+
+
+# A branch de uma ocorrencia (regra 16 e Passo 0.b do E1): fix|chore/<OC-ID>-<slug>.
+_BRANCH_OC = re.compile(r"(?:fix|chore)/(OC-\d{4}-\d{4,})(?:-.*)?")
+
+
+def _tem_marca(pasta):
+    return os.path.isfile(os.path.join(pasta, "ORQUESTRADOR.md")) or os.path.isfile(
+        os.path.join(pasta, "00-OCORRENCIA.md")
+    )
+
+
 def pasta_ocorrencia(raiz=None):
     """A pasta da ocorrencia em andamento, ou None.
 
-    Escolhe pelo ORQUESTRADOR.md mais recentemente modificado cujo `estagio`
-    nao esteja fechado. Sem estado proprio: le so o que a skill ja grava.
+    Numa branch de ocorrencia (`fix|chore/<OC-ID>-<slug>`), ela decide primeiro:
+    a pasta com o nome do ultimo segmento, aberta ou fechada, senao a do mesmo
+    OC-ID. Sem a pasta ainda (worktree nova, antes do 00-OCORRENCIA.md), devolve
+    None: a fechada mais recente nao e a atual, e o rastro dela recebia os
+    primeiros eventos da nova (conselhos, OC-2026-0007). Em outra branch,
+    escolhe pelo ORQUESTRADOR.md mais recentemente modificado cujo `estagio` nao
+    esteja fechado. Sem estado proprio: le so o que a skill ja grava.
     """
     raiz = raiz or raiz_repo()
     base = os.path.join(raiz, "docs", "manutencao")
     if not os.path.isdir(base):
         return None
 
-    abertas, fechadas = [], []
     try:
         entradas = sorted(os.listdir(base))
     except OSError:
         return None
 
+    # So a branch de ocorrencia decide: outra branch cujo ultimo segmento por acaso
+    # e o nome de uma pasta mantem a escolha de sempre.
+    branch = branch_atual(raiz)
+    oc = _BRANCH_OC.fullmatch(branch) if branch else None
+    if oc:
+        nome = branch.rsplit("/", 1)[-1]
+        if _tem_marca(os.path.join(base, nome)):
+            return os.path.join(base, nome)
+        for entrada in entradas:
+            if (entrada == oc.group(1) or entrada.startswith(oc.group(1) + "-")) and _tem_marca(
+                os.path.join(base, entrada)
+            ):
+                return os.path.join(base, entrada)
+        return None
+
+    abertas, fechadas = [], []
     for nome in entradas:
         pasta = os.path.join(base, nome)
         if not os.path.isdir(pasta):

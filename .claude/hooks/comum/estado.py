@@ -166,13 +166,71 @@ def caminhos_handoff(raiz, ocorrencia):
 
 def derivar(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcada=None):
     trabalho, fase, escritas = planejar_derivado(raiz, ocorrencia, agora, marco_tipo, marco_id, fase_forcada)
-    gravar(escritas)
+    gravar(escritas, raiz)
     return trabalho, fase
 
 
-def gravar(escritas):
+def gravar(escritas, raiz):
+    if escritas:
+        garantir_ignorados(raiz)
     for caminho, conteudo in escritas:
         escrever_atomico(caminho, conteudo)
+
+
+# Os derivados nao sao produto nem decisao: o handoff.md nao rastreado barrava o
+# E1 e o persistir-metodo da mergex como desvio (conselhos, OC-2026-0003 e 0009).
+DERIVADOS = (".expx/estado.json", ".expx/handoff.md")
+
+
+def garantir_ignorados(raiz):
+    """Poe os derivados no exclude local do Git, como o DS-123 da sprintx faz na F1.
+
+    So o que nenhuma regra ignora ainda (`git check-ignore -q --no-index`), no
+    arquivo que o proprio Git indica (`git rev-parse --git-path info/exclude`: numa
+    worktree vinculada, o do diretorio comum), sem duplicar linha. O derivado que o
+    time versiona fica como esta: a regra nao o ignoraria nem limparia o status, e
+    tira-lo do indice e decisao do time. Nunca toca o `.gitignore`. Sem Git ou com
+    qualquer falha, segue: o derivado e cache e nunca trava o marco.
+    """
+    try:
+        import subprocess
+
+        def git(*args):
+            return subprocess.run(
+                ["git", "-C", raiz, *args], capture_output=True, text=True, timeout=5,
+            )
+
+        faltam = []
+        for caminho in DERIVADOS:
+            r = git("check-ignore", "-q", "--no-index", caminho)
+            if r.returncode not in (0, 1):
+                return  # sem Git, ou o Git falhou: nada a garantir
+            if r.returncode == 1 and git("ls-files", "--error-unmatch", "--", caminho).returncode != 0:
+                faltam.append(caminho)
+        if not faltam:
+            return
+        r = git("rev-parse", "--git-path", "info/exclude")
+        if r.returncode != 0 or not r.stdout.strip():
+            return
+        exclude = r.stdout.strip()
+        if not os.path.isabs(exclude):
+            exclude = os.path.join(raiz, exclude)
+        try:
+            with open(exclude, encoding="utf-8") as fh:
+                atual = fh.read()
+        except FileNotFoundError:
+            atual = ""
+        linhas = set(atual.splitlines())
+        novas = [c for c in faltam if c not in linhas]
+        if not novas:
+            return
+        os.makedirs(os.path.dirname(exclude), exist_ok=True)
+        with open(exclude, "a", encoding="utf-8") as fh:
+            if atual and not atual.endswith("\n"):
+                fh.write("\n")
+            fh.write("".join(c + "\n" for c in novas))
+    except Exception:
+        return
 
 
 def planejar_derivado(raiz, ocorrencia, agora, marco_tipo=None, marco_id=None, fase_forcada=None):
@@ -277,7 +335,7 @@ def executar(args):
     trabalho, fase, escritas = planejar_derivado(raiz, ocorrencia, agora, args.tipo, args.id, fase_nova)
     if tem_orquestrador:
         atualizar_orquestrador(caminho_orquestrador, fase_nova, args.tipo, agora)
-    gravar(escritas)
+    gravar(escritas, raiz)
     CLI_RASTRO.gravar_mecanico(
         tipo=args.tipo, trabalho=trabalho, fase=fase, identificador=args.id,
         resultado=args.resultado, raiz=raiz,
