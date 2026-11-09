@@ -604,6 +604,8 @@ afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo esto
     grep -F "Compare nos dois sentidos" -A3 "$2" | grep -qF "docs/entregas/<OC-ID>/revisao/"' _ "$FIX" "$S/references/04-qa.md"
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
+afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
+  tem "$FIX" 'Outra saída\*\* \(`127` sem o `node`, por exemplo\): a revisão não rodou; trate como a saída 2\.'
 afirma revisao-nunca-rejeita "a skill nunca rejeita achado: só o desenvolvedor" \
   tem "$FIX" 'Só o desenvolvedor rejeita'
 afirma revisao-no-detalhe-da-conclusao "o resultado vai no detalhe do task_concluida, sem evento novo" \
