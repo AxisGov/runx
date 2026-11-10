@@ -658,6 +658,14 @@ afirma revisao-nunca-rejeita "a skill nunca rejeita achado: só o desenvolvedor"
   tem "$FIX" 'Só o desenvolvedor rejeita'
 afirma revisao-no-detalhe-da-conclusao "o resultado vai no detalhe do task_concluida, sem evento novo" \
   tem "$FIX" 'evento task_concluida --fase e3 --task <T-NN\.MM> --detalhe "revisao: <resultado>"'
+# revisar de novo depois do rejeitar reabriu o mesmo ponto com outra identidade (Login, ui-react-046, T-01.01)
+afirma revisao-nao-repete-depois-do-rejeitar "depois de um rejeitar que sai ok, não se roda o revisar de novo" \
+  tem "$FIX" 'Depois de um `rejeitar` do desenvolvedor que imprime `<T-NN\.MM> ok`, a revisão da task está feita: siga ao passo 9 sem rodar o `revisar` de novo'
+afirma revisao-repete-so-com-arquivo-mudado "só revisa de novo quando um arquivo da task mudou depois do rejeitar" \
+  tem "$FIX" 'Só revise de novo se um arquivo da task mudou depois do `rejeitar`'
+# o lock nao revisavel nao vai a CLI, que acusa "lock nao atualizado" (Login, ui-react-046)
+afirma revisao-lock-falso-positivo "o lock não atualizado é falso positivo conhecido, contestado com o diff do lock" \
+  bash -c 'grep -q "lock não foi atualizado" "$1" && grep -q "falso positivo conhecido" "$1" && grep -q "com o diff do lock" "$1"' _ "$FIX"
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
