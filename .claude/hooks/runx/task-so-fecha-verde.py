@@ -64,11 +64,18 @@ def concluidas_no_disco(caminho_abs):
 
 
 def tem_evidencia(raiz, trabalho, tid):
-    """docs/entregas/<trabalho>/revisao/<tid>.json como arquivo comum: link nao vale."""
+    """docs/entregas/<trabalho>/revisao/<tid>.json como arquivo comum, sem link em nenhum ponto do
+    caminho a partir da raiz: uma pasta `revisao` linkada para fora da worktree nao vale
+    (CodeAnt no conselhos#296)."""
     import stat
 
+    partes = ["docs", "entregas", trabalho, "revisao", f"{tid}.json"]
     try:
-        return stat.S_ISREG(os.lstat(os.path.join(raiz, "docs", "entregas", trabalho, "revisao", f"{tid}.json")).st_mode)
+        for k in range(1, len(partes) + 1):
+            modo = os.lstat(os.path.join(raiz, *partes[:k])).st_mode
+            if stat.S_ISLNK(modo):
+                return False
+        return stat.S_ISREG(modo)
     except OSError:
         return False
 

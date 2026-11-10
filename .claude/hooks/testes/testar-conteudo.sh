@@ -649,6 +649,9 @@ afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova ten
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
   tem "$FIX" 'Outra saída\*\* \(`127` sem o `node`, `70` erro interno do núcleo, ou a saída 1 sem a linha `<T-NN\.MM> achados`, por exemplo\): a revisão não rodou; trate como a saída 2\.'
 # a excecao nao tratada saia 1, o codigo de achados (CodeAnt no katosmv/login#73): so a linha prova o achado
+# o nucleo tambem deixa aberto o achado sem vinculo a uma linha da task (CodeAnt no conselhos#296)
+afirma revisao-saida-1-sem-vinculo "a saída 1 cobre o achado sem vínculo a uma linha da task" \
+  tem "$FIX" 'há achado aberto: em linha que a task alterou, ou sem vínculo a uma linha de um arquivo da task'
 afirma revisao-saida-1-so-com-a-linha "a saída 1 só é achado com a última linha <T-NN.MM> achados" \
   tem "$FIX" '\*\*Saída 1\*\* com a última linha `<T-NN\.MM> achados`'
 afirma revisao-nunca-rejeita "a skill nunca rejeita achado: só o desenvolvedor" \

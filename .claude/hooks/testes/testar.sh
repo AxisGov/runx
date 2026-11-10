@@ -277,6 +277,19 @@ caso "evidencia: bloqueio com ela passa"     0 "$H/runx/task-so-fecha-verde.py" 
 rm -f "$W/.expx/hooks.json"; evid nenhuma
 JM=${J/\"id\": \"T-01.01\"/\"id\": \"T-1.1\"}; JM=${J//T-01.01/T-1.1}
 caso_aviso "evidencia: id fora da forma avisa"     1 "$JM"
+# link no caminho, nao so no arquivo: a pasta `revisao` apontando para fora da raiz (CodeAnt no conselhos#296)
+rm -f "$W/.expx/hooks.json"; evid nenhuma; FORA="$(mktemp -d)"; printf '{}' > "$FORA/T-01.01.json"
+mkdir -p "$W/docs/entregas/OC-2026-0142"; ln -s "$FORA" "$EV"
+caso_aviso "evidencia: pasta revisao link nao vale"  1 "$J"
+rm -f "$EV"
+# `status: concluida` dentro de um escalar em bloco (`objetivo: |`) e texto, nao a chave (Codex, conselhos#296)
+JB=$(python3 - "$W/$T" <<'PYB'
+import json,sys
+c = "---\nkind: tasks\ntrabalho_id: OC-2026-0142\ntasks:\n  - id: T-01.01\n    status: em_andamento\n    objetivo: |\n      depois vira\n      status: concluida\n    teste_integracao: Chama endpoint\n    teste_funcional: Dado 60kg retorna 120\n    suite: verde\n---\n"
+print(json.dumps({"tool_name":"Write","tool_input":{"file_path":sys.argv[1],"content":c}}))
+PYB
+)
+caso_aviso "evidencia: status dentro de bloco nao conclui" 0 "$JB"
 rm -f "$W/.expx/hooks.json" "$OC/sprint-01/tasks.md.bak" "$W/alvo.json"; evid nenhuma; leitor nenhum
 
 echo "== task-reivindicada =="
@@ -593,6 +606,10 @@ print($4)
   if [ "$real" = "$3" ]; then ok=$((ok+1)); printf '  ok   %-46s => %s\n' "$1" "$real"
   else falhou=$((falhou+1)); printf '  FALHA %-45s esperado=%s real=%s\n' "$1" "$3" "$real"; fi
 }
+# escalar em bloco no parser (Codex, conselhos#296): o texto do bloco nao vira chave
+caso_valor "parse: escalar em bloco e texto" "$W" "em_andamento" "R._parse(['tasks:', '  - id: T-1', '    status: em_andamento', '    objetivo: >-', '      status: concluida', '      x: y'])['tasks'][0]['status']"
+caso_valor "parse: o texto do bloco fica no campo" "$W" "status: concluida x: y" "' '.join(R._parse(['a: |', '  status: concluida', '  x: y', 'b: 1'])['a'].split())"
+caso_valor "parse: a chave depois do bloco volta a valer" "$W" "1" "R._parse(['a: |', '  status: concluida', 'b: 1'])['b']"
 repo_na_branch "$PB/a" fix/OC-2026-0007-nova
 caso_valor "branch-de-oc-sem-pasta-nao-cai-na-fechada" "$PB/a" "None" "R.pasta_ocorrencia()"
 nova_oc "$PB/a" OC-2026-0007-nova OC-2026-0007 00-OCORRENCIA.md em_andamento
