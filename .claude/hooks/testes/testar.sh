@@ -277,6 +277,11 @@ caso "evidencia: bloqueio com ela passa"     0 "$H/runx/task-so-fecha-verde.py" 
 rm -f "$W/.expx/hooks.json"; evid nenhuma
 JM=${J/\"id\": \"T-01.01\"/\"id\": \"T-1.1\"}; JM=${J//T-01.01/T-1.1}
 caso_aviso "evidencia: id fora da forma avisa"     1 "$JM"
+# link no caminho, nao so no arquivo: a pasta `revisao` apontando para fora da raiz (CodeAnt no conselhos#296)
+rm -f "$W/.expx/hooks.json"; evid nenhuma; FORA="$(mktemp -d)"; printf '{}' > "$FORA/T-01.01.json"
+mkdir -p "$W/docs/entregas/OC-2026-0142"; ln -s "$FORA" "$EV"
+caso_aviso "evidencia: pasta revisao link nao vale"  1 "$J"
+rm -f "$EV"
 rm -f "$W/.expx/hooks.json" "$OC/sprint-01/tasks.md.bak" "$W/alvo.json"; evid nenhuma; leitor nenhum
 
 echo "== task-reivindicada =="
