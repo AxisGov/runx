@@ -318,9 +318,19 @@ def _parse(linhas):
     """
     raiz = {}
     pilha = [(0, raiz)]
+    # Escalar em bloco (`chave: |` ou `>`): as linhas mais indentadas que a chave sao o
+    # texto dela, nunca chaves (um `status: concluida` num `objetivo: |` concluia a task,
+    # Codex sobre o conselhos#296). (indentacao da chave, destino, chave, linhas).
+    escalar = None
 
     for linha in linhas:
         linha = linha.replace("\t", "    ")  # tab indenta tanto quanto espaco
+        if escalar is not None:
+            if not linha.strip() or len(linha) - len(linha.lstrip(" ")) > escalar[0]:
+                escalar[3].append(linha.strip())
+                continue
+            escalar[1][escalar[2]] = "\n".join(escalar[3]).strip("\n")
+            escalar = None
         if not linha.strip() or linha.lstrip().startswith("#"):
             continue
         ident = len(linha) - len(linha.lstrip(" "))
@@ -345,7 +355,10 @@ def _parse(linhas):
                 # que comeca 2 colunas depois do "-".
                 pilha.append((ident + 2, bloco))
                 chave, _, resto = item.partition(":")
-                _atribui(bloco, chave.strip(), resto, ident + 2, pilha)
+                if _abre_escalar(resto):
+                    escalar = (ident + 2, bloco, chave.strip(), [])
+                else:
+                    _atribui(bloco, chave.strip(), resto, ident + 2, pilha)
             elif item:
                 alvo.append(_valor(item))
             continue
@@ -360,9 +373,19 @@ def _parse(linhas):
             continue
 
         chave, _, resto = conteudo.partition(":")
-        _atribui(alvo, chave.strip(), resto, ident, pilha)
+        if _abre_escalar(resto):
+            escalar = (ident, alvo, chave.strip(), [])
+        else:
+            _atribui(alvo, chave.strip(), resto, ident, pilha)
 
+    if escalar is not None:
+        escalar[1][escalar[2]] = "\n".join(escalar[3]).strip("\n")
     return _enxuga(raiz) or {}
+
+
+def _abre_escalar(resto):
+    """`|` ou `>`, com os indicadores de corte e de indentacao do YAML, e comentario opcional."""
+    return re.fullmatch(r"[|>](?:[+-]?[1-9]?|[1-9][+-])", _sem_comentario(resto).strip()) is not None
 
 
 def _atribui(destino, chave, resto, ident, pilha):
