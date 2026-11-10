@@ -26,7 +26,7 @@ A entrada pode ser texto, ticket ou arquivo. O deploy é externo: a runx investi
 11. Arquivo de estado usa `expx-schema v1`; valor ausente é explícito, não chave omitida.
 12. Nada em `docs/manutencao/` é apagado ou movido pela skill.
 13. Coincidência de arquivo não é regressão; vínculo causal exige evidência.
-14. Uma ocorrência aberta por worktree. Uma sessão por ocorrência; nova ocorrência começa em nova sessão.
+14. Uma ocorrência aberta por worktree. Uma sessão por ocorrência; nova ocorrência começa em nova sessão. Não rode como subagente comum de outra sessão com a worktree diferente do `cwd` dela: os hooks seguem o `cwd` do payload, que `git -C` e `cd` no Bash não mudam, e rastro, estado e portões caem no checkout principal. Abra a sessão na worktree (`expx sessao <OC-ID>` imprime o comando; CONTRATO-expx-orquestracao, "Execução como subagente").
 15. `usage_limit_reached` encerra imediatamente: sem repetição, continuação automática, troca de modelo ou abertura de agente.
 16. Nenhuma segunda leitura por revisor sem mudança do artefato ou lote revisado.
 

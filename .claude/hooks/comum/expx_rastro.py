@@ -508,10 +508,9 @@ def _fora_do_head(raiz, pastas):
 
     None quando nao da para saber (Git falhando, HEAD que nao resolve num repositorio com
     commits, como a branch orfa): sem saber de onde a pasta veio, nao se escolhe nenhuma,
-    nem a fechada da branch.
+    nem a fechada da branch. Sem pasta nenhuma o Git tambem e consultado: a lista vazia
+    voltava [] sem ele, e a fechada da branch passava com o Git falhando (conselhos#293).
     """
-    if not pastas:
-        return []
     try:
         import subprocess
 

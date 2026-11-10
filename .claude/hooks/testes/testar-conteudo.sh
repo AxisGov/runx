@@ -573,13 +573,30 @@ for f in list((raiz / "comum").glob("*.py")) + list((raiz / "runx").glob("*.py")
     assert j < 0 or i < j, f.name
 ' "$R"
 
+echo "== classe da sessao principal (expx 0.13.22) =="
+# A tripla que o `expx sessao <OC-ID>` le para imprimir o `claude --model ... --effort ...`: so o
+# que quem chama a skill declarar, nunca inferida, nunca mudada depois (escopo (a) do desenho).
+afirma classe-sessao-no-template "o template do 00-OCORRENCIA nasce com a tripla nula" \
+  bash -c 'for k in classe_sessao classe_sessao_por classe_sessao_justificativa; do grep -qx "$k: null" "$1" || exit 1; done' _ "$S/assets/TEMPLATE-ocorrencia.md"
+afirma classe-sessao-no-schema "o schema declara a tripla, o enum e quem declara" \
+  bash -c 'f="$1"; grep -q "classe_sessao: null" "$f" && grep -q "mecanico_triagem.*raciocinio_normal.*profundo_excepcional" "$f" && grep -q "classe_sessao_por" "$f" && grep -qi "nunca é inferida" "$f"' _ "$S/references/00-schema.md"
+afirma classe-sessao-so-declarada "o E1 grava a classe só quando quem chama a declara, e nunca a muda" \
+  tem "$S/references/01-investigacao.md" "classe_sessao.*só quando quem chama a skill a declara"
+afirma classe-sessao-no-handoff "o handoff do E1 leva a classe declarada (CodeRabbit no runx#20)" \
+  tem "$S/references/01-investigacao.md" "relato literal completo\*\* e, quando foi declarada, a"
+
+# Modo subagente (Conselhos, OC-2026-0011): os hooks seguem o `cwd` do payload, que `git -C`/`cd`
+# no Bash nao mudam; os eventos caiam no checkout principal (bancada do ExpxDev 0.13.22).
+afirma subagente-fora-da-worktree "o SKILL.md proíbe o subagente comum com a worktree diferente do cwd" \
+  bash -c 'grep -q "subagente comum" "$1" && grep -q "git -C" "$1" && grep -q "expx sessao <OC-ID>" "$1"' _ "$S/SKILL.md"
+
 echo "== revisao por task no E3 =="
 # O lado da skill do contrato expx-revisao (desenho de 2026-10-18, 4.2): sem este
 # passo, o E1 da mergex commitava a task sem a evidencia e, no modo obrigatoria,
 # o commit seguinte so com ela era recusado (conselhos, OC-2026-0009).
 FIX="$S/references/03-fix.md"
 afirma revisao-chama-o-revisar "o 03-fix chama o revisar do núcleo com trabalho, task e arquivos" \
-  tem "$FIX" 'expx-revisao\.mjs" revisar --trabalho <OC-ID> --task <T-NN\.MM>'
+  tem "$FIX" 'expx-revisao\.mjs" revisar --trabalho "<OC-ID>" --task "<T-NN\.MM>"'
 afirma revisao-entre-aceite-e-conclusao "a revisão vem depois do critério de aceite e antes de marcar concluída" \
   python3 -c '
 import sys
@@ -594,9 +611,34 @@ afirma revisao-modo-pelo-leitor "o modo vem do leitor do núcleo, e desligada pu
 afirma revisao-quatro-saidas "as saídas 0, 1, 2 e 3 têm rota, e as classes de bloqueio do contrato aparecem" \
   bash -c 'for p in "Saída 0" "Saída 1" "Saída 2" "Saída 3" revisao_defeito revisao_contestada revisao_incompleta "Saída 64 ou 75"; do grep -q "$p" "$1" || exit 1; done' _ "$FIX"
 afirma revisao-na-raiz "o revisar grava na raiz do repositório, de qualquer subpasta" \
-  tem "$FIX" 'revisar --trabalho <OC-ID> --task <T-NN\.MM> --raiz "\$RAIZ" --arquivos'
-afirma revisao-sem-configuracao-nao-chama-o-leitor "sem .expx/fatiamento.json o padrão vale sem o leitor" \
-  tem "$FIX" 'if \[ -f "\$RAIZ/\.expx/fatiamento\.json" \]'
+  tem "$FIX" 'revisar --trabalho "<OC-ID>" --task "<T-NN\.MM>" --raiz "\$RAIZ" --arquivos "<arquivos'
+# caminho com espaco sem aspas era dividido pelo shell e o revisar saia 64 (CodeAnt no katosmv/login#73)
+# O leitor decide a presenca (lstat: pasta e link quebrado sao entrada invalida); o `[ -f ]`
+# da skill era falso para os dois e pulava o leitor (CodeAnt no katosmv/login#73, r4518931484).
+afirma revisao-leitor-roda-sempre "com o leitor instalado, ele roda sempre; sem ele, qualquer entrada é modo desconhecido" \
+  tem "$FIX" 'if \[ -f "\$N/expx-fatiamento\.mjs" \]; then node "\$N/expx-fatiamento\.mjs" --formato json --raiz "\$RAIZ"$'
+bloco_modo() { awk '/\*\*Primeiro, o modo\.\*\*/{p=1} p && /^ *```/{n++; if (n == 2) exit; next} p && n == 1 {sub(/^   /, ""); print}' "$1"; }
+modo_em() { # modo_em <com-leitor|sem-leitor> <ausente|pasta|link|arquivo> -> stdout do bloco + "rc=<n>" + "leitor" se rodou
+  local d; d="$(mktemp -d)"; git -C "$d" init -q
+  local n="$d/.expx/marketplace/plugins/expx/nucleo/scripts"; mkdir -p "$n" "$d/.expx"
+  [ "$1" = com-leitor ] && printf 'import { writeFileSync } from "node:fs"; writeFileSync(process.argv[1] + ".rodou", ""); process.exit(1);\n' > "$n/expx-fatiamento.mjs"
+  case "$2" in pasta) mkdir "$d/.expx/fatiamento.json" ;; link) ln -s nao-existe "$d/.expx/fatiamento.json" ;; arquivo) echo '{}' > "$d/.expx/fatiamento.json" ;; esac
+  (cd "$d" && bash -c "$(bloco_modo "$FIX")"; echo "rc=$?"; [ -e "$n/expx-fatiamento.mjs.rodou" ] && echo leitor)
+  rm -rf "$d"
+}
+export -f bloco_modo modo_em; export FIX
+afirma revisao-leitor-roda-com-pasta "pasta no lugar do fatiamento.json: o leitor roda (e falha)" \
+  bash -c '[ "$(modo_em com-leitor pasta | tr "\n" " ")" = "rc=1 leitor " ]'
+afirma revisao-leitor-roda-com-link-quebrado "link quebrado no lugar do fatiamento.json: o leitor roda" \
+  bash -c '[ "$(modo_em com-leitor link | tr "\n" " ")" = "rc=1 leitor " ]'
+afirma revisao-leitor-roda-sem-arquivo "sem fatiamento.json, o leitor roda e imprime o padrão" \
+  bash -c '[ "$(modo_em com-leitor ausente | tr "\n" " ")" = "rc=1 leitor " ]'
+afirma revisao-sem-leitor-com-pasta "sem o leitor, pasta no lugar do arquivo é modo desconhecido" \
+  bash -c '[ "$(modo_em sem-leitor pasta | tr "\n" " ")" = "sem leitor rc=0 " ]'
+afirma revisao-sem-leitor-com-link "sem o leitor, link quebrado é modo desconhecido" \
+  bash -c '[ "$(modo_em sem-leitor link | tr "\n" " ")" = "sem leitor rc=0 " ]'
+afirma revisao-sem-leitor-sem-arquivo "sem o leitor e sem entrada nenhuma, nada é impresso (vale o padrão)" \
+  bash -c '[ "$(modo_em sem-leitor ausente | tr "\n" " ")" = "rc=0 " ]'
 afirma passo-0b-derivados-ignorados "o Passo 0.b diz que os derivados ficam no exclude local" \
   tem "$S/references/01-investigacao.md" 'estado\.py.*info/exclude'
 afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo estourado no E3 nem no E4" \
@@ -605,7 +647,10 @@ afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo esto
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
-  tem "$FIX" 'Outra saída\*\* \(`127` sem o `node`, por exemplo\): a revisão não rodou; trate como a saída 2\.'
+  tem "$FIX" 'Outra saída\*\* \(`127` sem o `node`, `70` erro interno do núcleo, ou a saída 1 sem a linha `<T-NN\.MM> achados`, por exemplo\): a revisão não rodou; trate como a saída 2\.'
+# a excecao nao tratada saia 1, o codigo de achados (CodeAnt no katosmv/login#73): so a linha prova o achado
+afirma revisao-saida-1-so-com-a-linha "a saída 1 só é achado com a última linha <T-NN.MM> achados" \
+  tem "$FIX" '\*\*Saída 1\*\* com a última linha `<T-NN\.MM> achados`'
 afirma revisao-nunca-rejeita "a skill nunca rejeita achado: só o desenvolvedor" \
   tem "$FIX" 'Só o desenvolvedor rejeita'
 afirma revisao-no-detalhe-da-conclusao "o resultado vai no detalhe do task_concluida, sem evento novo" \

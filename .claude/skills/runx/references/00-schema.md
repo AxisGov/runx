@@ -134,6 +134,9 @@ origem: ticket-4471
 tem_reproducao: true
 modulo_afetado: [frete, checkout]
 worktree: null
+classe_sessao: null
+classe_sessao_por: null
+classe_sessao_justificativa: null
 atualizado_em: 2026-08-29
 ---
 ```
@@ -145,6 +148,18 @@ atualizado_em: 2026-08-29
   ocorrência (regra 16, `references/01-investigacao.md`). `null` quando não há git, ou quando
   o pedido foi explicitamente "sem worktree" — a chave existe sempre, mesmo quando não se
   aplica. Nunca um caminho absoluto.
+- `classe_sessao`, `classe_sessao_por` e `classe_sessao_justificativa` declaram a classe da
+  sessão principal deste trabalho, que o `expx sessao <OC-ID>` do ExpxDev lê para imprimir o
+  `cd <worktree> && claude --model … --effort …` (CONTRATO-expx-orquestracao §14). A classe é
+  `mecanico_triagem`, `raciocinio_normal`, `profundo_excepcional` ou `null`; `classe_sessao_por`
+  é quem declarou (identificador minúsculo, como `orcamento_declarado_por` da sprintx);
+  `classe_sessao_justificativa` é texto de uma linha, obrigatório em `profundo_excepcional` e
+  `null` nas outras classes. A classe nunca é inferida: só quem chama a skill (o pedido, o
+  orquestrador ou um humano) a declara, e a skill só grava. Sem declaração, as três ficam
+  `null`; declarada, não muda mais neste trabalho (v1). As chaves existem sempre. Limite da v1:
+  numa ocorrência nova, a primeira sessão abre antes do `00-OCORRENCIA.md`, e quem a abre é quem
+  declara a classe, com o modelo dela; o `expx sessao` serve às sessões seguintes (retomada,
+  `/clear`, a sessão aberta na worktree depois do handoff do E1).
 
 ### `01-CAUSA-RAIZ.md` → `kind: causa_raiz`
 

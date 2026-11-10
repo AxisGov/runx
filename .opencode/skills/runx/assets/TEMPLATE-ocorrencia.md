@@ -10,6 +10,9 @@ origem: {{ticket-NNNN | canal | caminho do arquivo | null}}
 tem_reproducao: {{true | false}}
 modulo_afetado: [{{modulo}}]
 worktree: {{../<repo>--<OC-ID>-<slug> | null}}
+classe_sessao: null
+classe_sessao_por: null
+classe_sessao_justificativa: null
 atualizado_em: {{AAAA-MM-DD}}
 ---
 
