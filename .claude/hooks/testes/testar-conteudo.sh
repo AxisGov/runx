@@ -666,6 +666,9 @@ afirma revisao-repete-so-com-arquivo-mudado "só revisa de novo quando um arquiv
 # o lock nao revisavel nao vai a CLI, que acusa "lock nao atualizado" (Login, ui-react-046)
 afirma revisao-lock-falso-positivo "o lock não atualizado é falso positivo conhecido, contestado com o diff do lock" \
   bash -c 'grep -q "lock não foi atualizado" "$1" && grep -q "falso positivo conhecido" "$1" && grep -q "com o diff do lock" "$1"' _ "$FIX"
+# o lock alterado noutra coisa nao prova nada (CodeRabbit no runx#22, CodeAnt no sprintx#75)
+afirma revisao-lock-com-a-mesma-mudanca "o diff do lock tem de trazer a mesma mudança do package.json; sem ela, o achado é real" \
+  tem "$FIX" 'mostrando nele a mesma mudança do `package\.json` \(a versão ou a dependência nova\)\. Se o lock não traz essa mudança, o achado é real: corrija o lock na task\.'
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
