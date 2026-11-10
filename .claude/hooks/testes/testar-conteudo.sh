@@ -593,7 +593,7 @@ afirma subagente-fora-da-worktree "o SKILL.md proíbe o subagente comum com a wo
 # CONTRATO-expx-orquestracao 15.1): criar outra a deixaria longe do cwd que os hooks recebem.
 INV="$S/references/01-investigacao.md"
 afirma subagente-isolado-consulta-o-nucleo "o E1 consulta o expx-worktree-isolada.sh antes de criar a worktree" \
-  tem "$INV" 'nucleo/scripts/expx-worktree-isolada\.sh"`\. Se ele imprime `isolada`, esta árvore é a worktree que o Claude Code criou para o subagente'
+  tem "$INV" 'S=\.expx/marketplace/plugins/expx/nucleo/scripts/expx-worktree-isolada\.sh; R=.*\[ -f "\$R/\$S" \] \|\| R=.*bash "\$R/\$S"` \(o script da árvore atual, senão o do checkout principal.*Sem ele nos dois lugares, com a raiz em `\.claude/worktrees/agent-<id>`, pare e diga.*Se ele imprime `isolada`, esta árvore é a worktree que o Claude Code criou para o subagente'
 afirma subagente-isolado-troca-na-propria-arvore "isolada: troca de branch na própria worktree, com a árvore limpa, sem criar outra" \
   bash -c 'grep -qF "não crie outra, que ficaria longe do \`cwd\` que os hooks recebem" "$1" && grep -qF "\`git switch -c <branch> --no-track <base>\` se a branch não existe, \`git switch <branch>\` se ela existe e não está em worktree nenhuma" "$1" && grep -qF "Com a árvore limpa (\`git status --porcelain\` vazio; suja, pare e diga)" "$1"' _ "$INV"
 afirma subagente-isolado-branch-ocupada-para "isolada com a branch em outro worktree vivo: para (a retomada é uma sessão lá)" \
@@ -685,7 +685,7 @@ afirma revisao-lock-falso-positivo "o lock não atualizado é falso positivo con
 # o lock alterado noutra coisa nao prova nada (CodeRabbit no runx#22, CodeAnt no sprintx#75)
 # e o diff sozinho tambem nao: o lock pode repetir a mudanca e manter a resolucao antiga (CodeAnt no expxdev#161)
 afirma revisao-lock-com-a-mesma-mudanca "o diff do lock com a mudança do package.json e a instalação congelada passando; sem as duas, o achado é real" \
-  tem "$FIX" 'mostrando nele a mesma mudança do `package\.json` \(a versão ou a dependência nova\), e com a instalação congelada do lockfile \(`npm ci` ou equivalente\) passando com ele\. Sem as duas provas, o achado é real: corrija o lock na task\.'
+  tem "$FIX" 'mostrando nele a mesma mudança do `package\.json` \(a versão ou a dependência nova\), e com a instalação congelada do lockfile \(`npm ci` ou equivalente\) passando com ele\. Se o lock não traz a mudança, ou se a instalação congelada o recusa por não bater com o `package\.json`, o achado é real: corrija o lock na task\. Se ela falha por outro motivo \(rede, registro, script de instalação\), não há prova: registre a contestação com essa falha, e o desenvolvedor decide\.'
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
