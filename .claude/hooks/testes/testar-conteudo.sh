@@ -589,6 +589,22 @@ afirma classe-sessao-no-handoff "o handoff do E1 leva a classe declarada (CodeRa
 # no Bash nao mudam; os eventos caiam no checkout principal (bancada do ExpxDev 0.13.22).
 afirma subagente-fora-da-worktree "o SKILL.md proíbe o subagente comum com a worktree diferente do cwd" \
   bash -c 'grep -q "subagente comum" "$1" && grep -q "git -C" "$1" && grep -q "expx sessao <OC-ID>" "$1"' _ "$S/SKILL.md"
+# O subagente com isolation "worktree" do Claude Code adota a propria worktree (ExpxDev 0.13.26,
+# CONTRATO-expx-orquestracao 15.1): criar outra a deixaria longe do cwd que os hooks recebem.
+INV="$S/references/01-investigacao.md"
+afirma subagente-isolado-consulta-o-nucleo "o E1 consulta o expx-worktree-isolada.sh antes de criar a worktree" \
+  tem "$INV" 'nucleo/scripts/expx-worktree-isolada\.sh"`\. Se ele imprime `isolada`, esta árvore é a worktree que o Claude Code criou para o subagente'
+afirma subagente-isolado-troca-na-propria-arvore "isolada: troca de branch na própria worktree, com a árvore limpa, sem criar outra" \
+  bash -c 'grep -qF "não crie outra, que ficaria longe do \`cwd\` que os hooks recebem" "$1" && grep -qF "\`git switch -c <branch> --no-track <base>\` se a branch não existe, \`git switch <branch>\` se ela existe e não está em worktree nenhuma" "$1" && grep -qF "Com a árvore limpa (\`git status --porcelain\` vazio; suja, pare e diga)" "$1"' _ "$INV"
+afirma subagente-isolado-branch-ocupada-para "isolada com a branch em outro worktree vivo: para (a retomada é uma sessão lá)" \
+  tem "$INV" 'num outro worktree vivo, pare e diga \(retome com uma sessão aberta lá, `expx sessao <OC-ID>`\)'
+# o registro prunable (pasta movida ou apagada) segue a rota de sempre antes da troca (Codex, 2a rodada do item 3)
+afirma subagente-isolado-prunable-antes-da-troca "isolada com a branch num worktree prunable: a rota de sempre, depois a troca" \
+  tem "$INV" 'num worktree que o `git worktree list --porcelain` marca `prunable`, trate-o antes como diz o resto deste item \(pare e pergunte; pasta apagada: `git worktree remove <caminho>`, e troque aqui; pasta movida e reparada: ela está viva\)'
+afirma subagente-isolado-grava-a-propria-worktree "o item 6 grava a worktree do agente quando houve a adoção" \
+  tem "$INV" 'da pasta movida do item 2, relativo a ele, ou, na adoção do subagente isolado, `\.claude/worktrees/agent-<id>`\)'
+afirma subagente-isolado-na-invariante "a invariante 14 nomeia a exceção do subagente isolado" \
+  tem "$S/SKILL.md" 'O subagente com `isolation: "worktree"` do Claude Code é a exceção: ele adota a própria worktree no Passo 0\.b do E1'
 
 echo "== revisao por task no E3 =="
 # O lado da skill do contrato expx-revisao (desenho de 2026-10-18, 4.2): sem este
@@ -667,8 +683,9 @@ afirma revisao-repete-so-com-arquivo-mudado "só revisa de novo quando um arquiv
 afirma revisao-lock-falso-positivo "o lock não atualizado é falso positivo conhecido, contestado com o diff do lock" \
   bash -c 'grep -q "lock não foi atualizado" "$1" && grep -q "falso positivo conhecido" "$1" && grep -q "com o diff do lock" "$1"' _ "$FIX"
 # o lock alterado noutra coisa nao prova nada (CodeRabbit no runx#22, CodeAnt no sprintx#75)
-afirma revisao-lock-com-a-mesma-mudanca "o diff do lock tem de trazer a mesma mudança do package.json; sem ela, o achado é real" \
-  tem "$FIX" 'mostrando nele a mesma mudança do `package\.json` \(a versão ou a dependência nova\)\. Se o lock não traz essa mudança, o achado é real: corrija o lock na task\.'
+# e o diff sozinho tambem nao: o lock pode repetir a mudanca e manter a resolucao antiga (CodeAnt no expxdev#161)
+afirma revisao-lock-com-a-mesma-mudanca "o diff do lock com a mudança do package.json e a instalação congelada passando; sem as duas, o achado é real" \
+  tem "$FIX" 'mostrando nele a mesma mudança do `package\.json` \(a versão ou a dependência nova\), e com a instalação congelada do lockfile \(`npm ci` ou equivalente\) passando com ele\. Sem as duas provas, o achado é real: corrija o lock na task\.'
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
