@@ -156,7 +156,10 @@ atualizado_em: 2026-08-29
   `classe_sessao_justificativa` é texto de uma linha, obrigatório em `profundo_excepcional` e
   `null` nas outras classes. A classe nunca é inferida: só quem chama a skill (o pedido, o
   orquestrador ou um humano) a declara, e a skill só grava. Sem declaração, as três ficam
-  `null`; declarada, não muda mais neste trabalho (v1). As chaves existem sempre.
+  `null`; declarada, não muda mais neste trabalho (v1). As chaves existem sempre. Limite da v1:
+  numa ocorrência nova, a primeira sessão abre antes do `00-OCORRENCIA.md`, e quem a abre é quem
+  declara a classe, com o modelo dela; o `expx sessao` serve às sessões seguintes (retomada,
+  `/clear`, a sessão aberta na worktree depois do handoff do E1).
 
 ### `01-CAUSA-RAIZ.md` → `kind: causa_raiz`
 

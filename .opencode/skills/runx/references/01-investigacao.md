@@ -84,7 +84,7 @@ docs/manutencao/<OC-ID>-<slug>/
 
 Preencha `00-OCORRENCIA.md` pelo contrato de entrada do SKILL.md. O relato do cliente é **copiado literalmente**, sem reescrever, sem corrigir, sem resumir. Se não houver identificador, gere `OC-<AAAA>-<NNNN>` sequencial olhando `docs/manutencao/` e `docs/relatorios/` — obtenha o ano com `date +%Y` do sistema, nunca de memória.
 
-**A classe da sessão principal** (`classe_sessao`, `classe_sessao_por` e `classe_sessao_justificativa`, em `references/00-schema.md`) só quando o pedido a declara, com quem declarou e, em `profundo_excepcional`, a justificativa. Nunca a infira do tamanho nem do tipo da ocorrência, e nunca a mude depois: sem declaração, as três ficam `null`.
+**A classe da sessão principal** (`classe_sessao`, `classe_sessao_por` e `classe_sessao_justificativa`, em `references/00-schema.md`) só quando quem chama a skill a declara (o pedido, o orquestrador ou um humano), com quem declarou e, em `profundo_excepcional`, a justificativa. Nunca a infira do tamanho nem do tipo da ocorrência, e nunca a mude depois: sem declaração, as três ficam `null`.
 
 **Registre o tipo já classificado** no `00-OCORRENCIA.md`. Se a classificação
 inicial inclui `bug` como opção plausível, registre `bug` de forma conservadora
@@ -136,7 +136,8 @@ Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). S
    Code, use `EnterWorktree` com `path` apontando para o diretório criado. Em
    qualquer harness sem transição na própria sessão — OpenCode e MimoCode,
    inclusive — anuncie um bloco de handoff com **Área de trabalho** (o caminho absoluto, porque a sessão pode estar em subpasta ou em outro worktree),
-   **OC-ID**, **tipo classificado** e **relato literal completo**. Instrua:
+   **OC-ID**, **tipo classificado**, **relato literal completo** e, quando foi declarada, a
+   **classe da sessão** (`classe_sessao`, `classe_sessao_por` e `classe_sessao_justificativa`). Instrua:
    "Abra o harness nesse diretório e reenvie este bloco inteiro para continuar".
    A nova sessão não avança sem receber novamente o relato literal, o ID e o
    tipo; anunciar somente o caminho é insuficiente. Encerre o E1 aqui. O

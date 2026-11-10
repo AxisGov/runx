@@ -40,7 +40,7 @@ def modo_revisao(raiz):
         import subprocess
 
         proc = subprocess.run(["node", leitor, "--formato", "env", "--raiz", raiz],
-                              capture_output=True, text=True, timeout=10)
+                              capture_output=True, text=True, timeout=3)
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
     if proc.returncode != 0:
@@ -166,11 +166,13 @@ def main():
     # que ESTA escrita leva a `concluida`. Uma edicao de task ja concluida nao a cobra de novo.
     antes = concluidas_no_disco(os.path.join(raiz, caminho))
     novas = [t.get("id") for t in tasks if t.get("status") == "concluida" and t.get("id") not in antes]
-    novas = [tid for tid in novas if isinstance(tid, str) and TASK_ID.match(tid)]
     trabalho = R.trabalho_id(os.path.join(raiz, "docs", "manutencao", m.group(1))) if novas else None
     if novas and trabalho and modo_revisao(raiz) == "obrigatoria":
         for tid in novas:
-            if not tem_evidencia(raiz, trabalho, tid):
+            # id fora da forma nao vira caminho, e a evidencia nao pode ser conferida: avisa
+            if not (isinstance(tid, str) and TASK_ID.match(tid)):
+                problemas.append(f"{tid or '?'}: id fora da forma T-NN.MM, a evidencia da revisao por task nao pode ser conferida")
+            elif not tem_evidencia(raiz, trabalho, tid):
                 problemas.append(f"{tid}: sem evidencia da revisao por task (docs/entregas/{trabalho}/revisao/{tid}.json), "
                                  "em modo obrigatoria: rode o passo 8 do 03-fix antes de concluir")
 

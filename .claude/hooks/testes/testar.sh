@@ -250,7 +250,7 @@ evid() { rm -rf "$W/docs/entregas"; case "$1" in
   link) mkdir -p "$EV"; printf '{}' > "$W/alvo.json"; ln -s ../../../../alvo.json "$EV/T-01.01.json" ;; esac; }
 caso_aviso() { # caso_aviso <nome> <0|1: espera o aviso da evidencia> <json>
   local saida; saida=$(printf '%s' "$3" | (cd "$W" && python3 "$H/runx/task-so-fecha-verde.py") 2>&1)
-  case "$saida" in *"sem evidencia da revisao por task"*) r=1 ;; *) r=0 ;; esac
+  case "$saida" in *"evidencia da revisao por task"*) r=1 ;; *) r=0 ;; esac
   if [ "$r" = "$2" ]; then ok=$((ok+1)); printf '  ok   %-46s aviso=%s\n' "$1" "$r"
   else falhou=$((falhou+1)); printf '  FALHA %-45s esperado=%s real=%s\n     %s\n' "$1" "$2" "$r" "$(printf '%s' "$saida" | head -3)"; fi
 }
@@ -273,6 +273,10 @@ mkdir -p "$W/.expx"; echo '{"hooks":{"task-so-fecha-verde":"bloqueio"}}' > "$W/.
 caso "evidencia: modo bloqueio barra"        2 "$H/runx/task-so-fecha-verde.py" "$J"
 evid arquivo
 caso "evidencia: bloqueio com ela passa"     0 "$H/runx/task-so-fecha-verde.py" "$J"
+# id fora da forma (ou ausente): a evidencia nao pode ser conferida, e isso avisa (CodeAnt/CodeRabbit no runx#20)
+rm -f "$W/.expx/hooks.json"; evid nenhuma
+JM=${J/\"id\": \"T-01.01\"/\"id\": \"T-1.1\"}; JM=${J//T-01.01/T-1.1}
+caso_aviso "evidencia: id fora da forma avisa"     1 "$JM"
 rm -f "$W/.expx/hooks.json" "$OC/sprint-01/tasks.md.bak" "$W/alvo.json"; evid nenhuma; leitor nenhum
 
 echo "== task-reivindicada =="

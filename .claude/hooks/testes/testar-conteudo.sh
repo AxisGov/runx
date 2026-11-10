@@ -580,8 +580,10 @@ afirma classe-sessao-no-template "o template do 00-OCORRENCIA nasce com a tripla
   bash -c 'for k in classe_sessao classe_sessao_por classe_sessao_justificativa; do grep -qx "$k: null" "$1" || exit 1; done' _ "$S/assets/TEMPLATE-ocorrencia.md"
 afirma classe-sessao-no-schema "o schema declara a tripla, o enum e quem declara" \
   bash -c 'f="$1"; grep -q "classe_sessao: null" "$f" && grep -q "mecanico_triagem.*raciocinio_normal.*profundo_excepcional" "$f" && grep -q "classe_sessao_por" "$f" && grep -qi "nunca é inferida" "$f"' _ "$S/references/00-schema.md"
-afirma classe-sessao-so-declarada "o E1 grava a classe só quando o pedido a declara, e nunca a muda" \
-  tem "$S/references/01-investigacao.md" "classe_sessao.*só quando o pedido a declara"
+afirma classe-sessao-so-declarada "o E1 grava a classe só quando quem chama a declara, e nunca a muda" \
+  tem "$S/references/01-investigacao.md" "classe_sessao.*só quando quem chama a skill a declara"
+afirma classe-sessao-no-handoff "o handoff do E1 leva a classe declarada (CodeRabbit no runx#20)" \
+  tem "$S/references/01-investigacao.md" "relato literal completo\*\* e, quando foi declarada, a"
 
 # Modo subagente (Conselhos, OC-2026-0011): os hooks seguem o `cwd` do payload, que `git -C`/`cd`
 # no Bash nao mudam; os eventos caiam no checkout principal (bancada do ExpxDev 0.13.22).
