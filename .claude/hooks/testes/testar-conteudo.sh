@@ -603,6 +603,9 @@ afirma subagente-isolado-prunable-antes-da-troca "isolada com a branch num workt
   tem "$INV" 'num worktree que o `git worktree list --porcelain` marca `prunable`, trate-o antes como diz o resto deste item \(pare e pergunte; pasta apagada: `git worktree remove <caminho>`, e troque aqui; pasta movida e reparada: ela está viva\)'
 afirma subagente-isolado-grava-a-propria-worktree "o item 6 grava a worktree do agente quando houve a adoção" \
   tem "$INV" 'da pasta movida do item 2, relativo a ele, ou, na adoção do subagente isolado, `\.claude/worktrees/agent-<id>`\)'
+# a base da branch da ocorrencia nao pode ser a worktree-agent-<id> (CodeRabbit no runx#23)
+afirma subagente-isolado-base-do-principal "na worktree do agente, a base vem da branch do checkout principal" \
+  bash -c 'grep -qF "$2" "$1"' _ "$INV" 'Na worktree de um subagente isolado (item 2), a branch atual é a `worktree-agent-<id>`: no lugar dela vale a do checkout principal, `git -C "$(git worktree list --porcelain | sed -n '\''1s/^worktree //p'\'')" branch --show-current`, com o mesmo critério.'
 afirma subagente-isolado-na-invariante "a invariante 14 nomeia a exceção do subagente isolado" \
   tem "$S/SKILL.md" 'O subagente com `isolation: "worktree"` do Claude Code é a exceção: ele adota a própria worktree no Passo 0\.b do E1'
 
@@ -686,6 +689,9 @@ afirma revisao-lock-falso-positivo "o lock não atualizado é falso positivo con
 # e o diff sozinho tambem nao: o lock pode repetir a mudanca e manter a resolucao antiga (CodeAnt no expxdev#161)
 afirma revisao-lock-com-a-mesma-mudanca "o diff do lock com a mudança do package.json e a instalação congelada passando; sem as duas, o achado é real" \
   tem "$FIX" 'mostrando nele a mesma mudança do `package\.json` \(a versão ou a dependência nova\), e com a instalação congelada do lockfile \(`npm ci` ou equivalente\) passando com ele\. Se o lock não traz a mudança, ou se a instalação congelada o recusa por não bater com o `package\.json`, o achado é real: corrija o lock na task\. Se ela falha por outro motivo \(rede, registro, script de instalação\), não há prova: registre a contestação com essa falha, e o desenvolvedor decide\.'
+# a instalacao congelada troca as dependencias: os testes rodam de novo (CodeRabbit no runx#23)
+afirma revisao-lock-roda-de-novo-os-testes "depois da instalação congelada, o subconjunto afetado roda de novo" \
+  bash -c 'grep -qF "$2" "$1"' _ "$FIX" 'A instalação congelada troca as dependências instaladas pelas do lock: rode de novo o subconjunto afetado antes de concluir a task.'
 
 printf '\n  %s ok, %s falhas\n' "$ok" "$falhou"
 [ "$falhou" -eq 0 ]
