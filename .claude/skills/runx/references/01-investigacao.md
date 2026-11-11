@@ -143,9 +143,7 @@ Só se aplica com git (`git rev-parse --is-inside-work-tree` responde `true`). S
    tipo; anunciar somente o caminho é insuficiente. Encerre o E1 aqui. O
    mecanismo muda por harness; a máquina de estados e o resultado são os mesmos.
 6. **Criar e registrar, já dentro da árvore correta.** Volte a "Crie o scaffold"
-   acima. Depois de criar `00-OCORRENCIA.md` dentro do worktree, grave
-   `worktree: ../<repo>--<OC-ID>-<slug>`, relativo ao checkout principal (ou o caminho
-   da pasta movida do item 2, relativo a ele, ou, na adoção do subagente isolado, `.claude/worktrees/agent-<id>`), e registre no rastro:
+   acima. Depois de criar `00-OCORRENCIA.md` dentro do worktree, grave em `worktree:` o caminho real do worktree em que a branch da ocorrência está, como o `git worktree list --porcelain` o lista, relativo ao checkout principal: `../<repo>--<OC-ID>-<slug>` quando ele nasceu aqui, o da pasta movida do item 2, ou `.claude/worktrees/agent-<id>` na worktree de um subagente isolado, inclusive na retomada nela depois da troca de branch, quando o script já não imprime `isolada`. Registre no rastro:
    `fase_iniciada --fase e1 --detalhe "worktree <esse caminho>"`.
 
 Toda a pasta `docs/manutencao/<OC-ID>-<slug>/` desta ocorrência vive dentro do worktree a partir daqui; nada dela é gravado no checkout principal.

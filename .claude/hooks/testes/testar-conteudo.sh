@@ -601,8 +601,11 @@ afirma subagente-isolado-branch-ocupada-para "isolada com a branch em outro work
 # o registro prunable (pasta movida ou apagada) segue a rota de sempre antes da troca (Codex, 2a rodada do item 3)
 afirma subagente-isolado-prunable-antes-da-troca "isolada com a branch num worktree prunable: a rota de sempre, depois a troca" \
   tem "$INV" 'num worktree que o `git worktree list --porcelain` marca `prunable`, trate-o antes como diz o resto deste item \(pare e pergunte; pasta apagada: `git worktree remove <caminho>`, e troque aqui; pasta movida e reparada: ela está viva\)'
-afirma subagente-isolado-grava-a-propria-worktree "o item 6 grava a worktree do agente quando houve a adoção" \
-  tem "$INV" 'da pasta movida do item 2, relativo a ele, ou, na adoção do subagente isolado, `\.claude/worktrees/agent-<id>`\)'
+afirma subagente-isolado-grava-a-propria-worktree "o item 6 grava o caminho real do worktree da branch, inclusive na retomada na worktree do agente" \
+  tem "$INV" 'grave em `worktree:` o caminho real do worktree em que a branch da ocorrência está, como o `git worktree list --porcelain` o lista, relativo ao checkout principal: .*`\.claude/worktrees/agent-<id>` na worktree de um subagente isolado, inclusive na retomada nela depois da troca de branch, quando o script já não imprime `isolada`'
+# a retomada na worktree do agente, ja na branch da ocorrencia, gravava ../<repo>--<OC-ID>-<slug> (CodeAnt no katosmv/login#78)
+afirma subagente-isolado-sem-lista-de-casos "o item 6 não enumera mais os caminhos sem a retomada" \
+  bash -c '! grep -qF "ou, na adoção do subagente isolado, \`.claude/worktrees/agent-<id>\`)" "$1"' _ "$INV"
 # a base da branch da ocorrencia nao pode ser a worktree-agent-<id> (CodeRabbit no runx#23)
 afirma subagente-isolado-base-do-principal "na worktree do agente, a base vem da branch do checkout principal" \
   bash -c 'grep -qF "$2" "$1"' _ "$INV" 'Na worktree de um subagente isolado (item 2), a branch atual é a `worktree-agent-<id>`: no lugar dela vale a do checkout principal, `git -C "$(git worktree list --porcelain | sed -n '\''1s/^worktree //p'\'')" branch --show-current`, com o mesmo critério.'
@@ -680,8 +683,9 @@ afirma revisao-no-detalhe-da-conclusao "o resultado vai no detalhe do task_concl
 # revisar de novo depois do rejeitar reabriu o mesmo ponto com outra identidade (Login, ui-react-046, T-01.01)
 afirma revisao-nao-repete-depois-do-rejeitar "depois de um rejeitar que sai ok, não se roda o revisar de novo" \
   tem "$FIX" 'Depois de um `rejeitar` do desenvolvedor que imprime `<T-NN\.MM> ok`, a revisão da task está feita: siga ao passo 9 sem rodar o `revisar` de novo'
-afirma revisao-repete-so-com-arquivo-mudado "só revisa de novo quando um arquivo da task mudou depois do rejeitar" \
-  tem "$FIX" 'Só revise de novo se um arquivo da task mudou depois do `rejeitar`'
+# o arquivo que mudou entre o revisar e o rejeitar: o rejeitar gravava ok sobre o blob antigo (CodeAnt no katosmv/login#78)
+afirma revisao-repete-so-com-arquivo-mudado "só revisa de novo quando um arquivo da task mudou depois do último revisar" \
+  tem "$FIX" 'Só revise de novo se um arquivo da task mudou depois do último `revisar`\. Se ele mudou antes do `rejeitar`, o `rejeitar` recusa \(`evidencia desatualizada: <arquivo>`, saída 1, nada gravado\): rode o `revisar` de novo, não rejeite\.'
 # o lock nao revisavel nao vai a CLI, que acusa "lock nao atualizado" (Login, ui-react-046)
 afirma revisao-lock-falso-positivo "o lock não atualizado é falso positivo conhecido, contestado com o diff do lock" \
   bash -c 'grep -q "lock não foi atualizado" "$1" && grep -q "falso positivo conhecido" "$1" && grep -q "com o diff do lock" "$1"' _ "$FIX"
