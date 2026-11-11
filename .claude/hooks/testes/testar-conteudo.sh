@@ -418,7 +418,7 @@ done
 
 afirma e1-registro-sem-pasta-antes-de-retomar \
   "no registro prunable, o E1 pergunta antes de remover: apagada sai, movida se repara (DR-92 e DR-93)" \
-  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove <caminho>\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f" \
+  bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove \"<caminho>\"\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f" \
     && grep -q "pare e pergunte. Pasta movida: \`git worktree repair <novo caminho>\`, e retome lá, com esse caminho, relativo ao checkout principal, na chave \`worktree\`. Pasta apagada:" "$f"'
 
 afirma e5-so-fecha-com-o-merge-provado \
@@ -600,7 +600,7 @@ afirma subagente-isolado-branch-ocupada-para "isolada com a branch em outro work
   tem "$INV" 'num outro worktree vivo, pare e diga \(retome com uma sessão aberta lá, `expx sessao <OC-ID>`\)'
 # o registro prunable (pasta movida ou apagada) segue a rota de sempre antes da troca (Codex, 2a rodada do item 3)
 afirma subagente-isolado-prunable-antes-da-troca "isolada com a branch num worktree prunable: a rota de sempre, depois a troca" \
-  tem "$INV" 'num worktree que o `git worktree list --porcelain` marca `prunable`, trate-o antes como diz o resto deste item \(pare e pergunte; pasta apagada: `git worktree remove <caminho>`, e troque aqui; pasta movida e reparada: ela está viva\)'
+  tem "$INV" 'num worktree que o `git worktree list --porcelain` marca `prunable`, trate-o antes como diz o resto deste item \(pare e pergunte; pasta apagada: `git worktree remove "<caminho>"`, e troque aqui; pasta movida e reparada: ela está viva\)'
 afirma subagente-isolado-grava-a-propria-worktree "o item 6 grava o caminho real do worktree da branch, inclusive na retomada na worktree do agente" \
   tem "$INV" 'grave em `worktree:` o caminho real do worktree em que a branch da ocorrência está, como o `git worktree list --porcelain` o lista, relativo ao checkout principal: .*`\.claude/worktrees/agent-<id>` na worktree de um subagente isolado, inclusive na retomada nela depois da troca de branch, quando o script já não imprime `isolada`'
 # a retomada na worktree do agente, ja na branch da ocorrencia, gravava ../<repo>--<OC-ID>-<slug> (CodeAnt no katosmv/login#78)
@@ -671,7 +671,7 @@ afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo esto
     grep -F "Compare nos dois sentidos" -A3 "$2" | grep -qF "docs/entregas/<OC-ID>/revisao/"' _ "$FIX" "$S/references/04-qa.md"
 # a CodeAnt fora escala para o Codex no proprio nucleo (0.14.0, decisao do Flavio: nao e parametro, e escala)
 afirma revisao-saida-2-depois-da-escala "a saída 2 é a CodeAnt e o Codex fora; o agente nunca chama o Codex" \
-  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1" && grep -qF "Com o núcleo 0.14.0 ou mais novo" "$1" && grep -qF "com um núcleo anterior, a saída 2 é só a CodeAnt fora" "$1"' _ "$FIX"
+  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1" && grep -qF "Com o núcleo 0.14.0 ou mais novo" "$1" && grep -qF "o resultado é o dele (saída 0 ou 1)" "$1" && grep -qF "com um núcleo anterior, a saída 2 é só a CodeAnt fora" "$1"' _ "$FIX"
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
