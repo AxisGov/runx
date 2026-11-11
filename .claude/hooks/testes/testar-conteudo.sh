@@ -668,7 +668,7 @@ afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo esto
     grep -F "Compare nos dois sentidos" -A3 "$2" | grep -qF "docs/entregas/<OC-ID>/revisao/"' _ "$FIX" "$S/references/04-qa.md"
 # a CodeAnt fora escala para o Codex no proprio nucleo (0.14.0, decisao do Flavio: nao e parametro, e escala)
 afirma revisao-saida-2-depois-da-escala "a saída 2 é a CodeAnt e o Codex fora; o agente nunca chama o Codex" \
-  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1"' _ "$FIX"
+  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1" && grep -qF "Com o núcleo 0.14.0 ou mais novo" "$1" && grep -qF "com um núcleo anterior, a saída 2 é só a CodeAnt fora" "$1"' _ "$FIX"
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
