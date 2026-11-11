@@ -606,6 +606,9 @@ afirma subagente-isolado-grava-a-propria-worktree "o item 6 grava o caminho real
 # a retomada na worktree do agente, ja na branch da ocorrencia, gravava ../<repo>--<OC-ID>-<slug> (CodeAnt no katosmv/login#78)
 afirma subagente-isolado-sem-lista-de-casos "o item 6 não enumera mais os caminhos sem a retomada" \
   bash -c '! grep -qF "ou, na adoção do subagente isolado, \`.claude/worktrees/agent-<id>\`)" "$1"' _ "$INV"
+# a base informada (nivel 1 do passo 3 da mergex) nao e aceita, e nunca e trocada em silencio (CodeAnt no conselhos#312)
+afirma e1-base-informada-para "a base que o pedido nomeia e não é a da ordem: a runx para e diz" \
+  bash -c 'grep -qF "Se o pedido nomeia uma base" "$1" && grep -qF "a runx não abre ocorrência sobre base informada (o nível 1 do passo 3 do E0 da mergex)" "$1" && grep -qF "nunca troque a base pedida pela desta ordem em silêncio" "$1" && grep -qF "ou não existe (\`git rev-parse --verify --quiet <base>\`), pare e diga" "$1"' _ "$INV"
 # a base da branch da ocorrencia nao pode ser a worktree-agent-<id> (CodeRabbit no runx#23)
 afirma subagente-isolado-base-do-principal "na worktree do agente, a base vem da branch do checkout principal" \
   bash -c 'grep -qF "$2" "$1"' _ "$INV" 'Na worktree de um subagente isolado (item 2), a branch atual é a `worktree-agent-<id>`: no lugar dela vale a do checkout principal, `git -C "$(git worktree list --porcelain | sed -n '\''1s/^worktree //p'\'')" branch --show-current`, com o mesmo critério.'
@@ -666,6 +669,9 @@ afirma passo-0b-derivados-ignorados "o Passo 0.b diz que os derivados ficam no e
 afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo estourado no E3 nem no E4" \
   bash -c 'grep -F "Nenhum arquivo fora da lista" "$1" | grep -qF "docs/entregas/<OC-ID>/revisao/" && \
     grep -F "Compare nos dois sentidos" -A3 "$2" | grep -qF "docs/entregas/<OC-ID>/revisao/"' _ "$FIX" "$S/references/04-qa.md"
+# a CodeAnt fora escala para o Codex no proprio nucleo (0.14.0, decisao do Flavio: nao e parametro, e escala)
+afirma revisao-saida-2-depois-da-escala "a saída 2 é a CodeAnt e o Codex fora; o agente nunca chama o Codex" \
+  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1" && grep -qF "Com o núcleo 0.14.0 ou mais novo" "$1" && grep -qF "com um núcleo anterior, a saída 2 é só a CodeAnt fora" "$1"' _ "$FIX"
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
