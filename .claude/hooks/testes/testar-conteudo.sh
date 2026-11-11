@@ -419,7 +419,7 @@ done
 afirma e1-registro-sem-pasta-antes-de-retomar \
   "no registro prunable, o E1 pergunta antes de remover: apagada sai, movida se repara (DR-92 e DR-93)" \
   bash -c 'f="'"$S"'/references/01-investigacao.md"; grep -q "\`git worktree remove \"<caminho>\"\` tira só esse registro" "$f" && grep -q "marca \`prunable\`" "$f" \
-    && grep -q "pare e pergunte. Pasta movida: \`git worktree repair <novo caminho>\`, e retome lá, com esse caminho, relativo ao checkout principal, na chave \`worktree\`. Pasta apagada:" "$f"'
+    && grep -q "pare e pergunte. Pasta movida: \`git worktree repair \"<novo caminho>\"\`, e retome lá, com esse caminho, relativo ao checkout principal, na chave \`worktree\`. Pasta apagada:" "$f"'
 
 afirma e5-so-fecha-com-o-merge-provado \
   "o E5 prova o merge antes de gravar, para no rc 4, e commita sem tocar a ENTREGA (DR-94)" \
@@ -671,7 +671,7 @@ afirma revisao-evidencia-no-escopo "a evidência da revisão não é escopo esto
     grep -F "Compare nos dois sentidos" -A3 "$2" | grep -qF "docs/entregas/<OC-ID>/revisao/"' _ "$FIX" "$S/references/04-qa.md"
 # a CodeAnt fora escala para o Codex no proprio nucleo (0.14.0, decisao do Flavio: nao e parametro, e escala)
 afirma revisao-saida-2-depois-da-escala "a saída 2 é a CodeAnt e o Codex fora; o agente nunca chama o Codex" \
-  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1" && grep -qF "Com o núcleo 0.14.0 ou mais novo" "$1" && grep -qF "o resultado é o dele (saída 0 ou 1)" "$1" && grep -qF "com um núcleo anterior, a saída 2 é só a CodeAnt fora" "$1"' _ "$FIX"
+  bash -c 'grep -qF "nem a CodeAnt nem o Codex revisaram" "$1" && grep -qF "o próprio núcleo já escalou para o Codex" "$1" && grep -qF "ou o que revisaram não vale porque um arquivo da task mudou durante a revisão" "$1" && grep -qF "O \`arquivo-mudou-durante-revisao\` não é indisponibilidade: rode de novo o subconjunto afetado, confira o critério de aceite e rode o \`revisar\` de novo; se um arquivo mudar outra vez, pare e diga" "$1" && grep -qF "Nos outros motivos, em \`se_disponivel\` é aviso" "$1" && grep -qF "não fecha a task, em nenhum modo, fora o \`arquivo-mudou-durante-revisao\`, que segue a rota acima:" "$1" && grep -qF "você nunca chama o Codex" "$1" && grep -qF "Nunca rode \`codeant login\` nem \`codex login\`" "$1" && grep -qF "Com o núcleo 0.14.0 ou mais novo" "$1" && grep -qF "o resultado é o dele (saída 0 ou 1)" "$1" && grep -qF "com um núcleo anterior, a saída 2 é só a CodeAnt fora" "$1"' _ "$FIX"
 afirma revisao-indisponivel-depois-de-achado-nao-fecha "a saída 2 numa nova tentativa, depois de um achado, não fecha a task" \
   tem "$FIX" 'Depois de uma saída 1, a saída 2 de uma nova tentativa não fecha a task'
 afirma revisao-saida-sem-rota-e-indisponivel "127 e qualquer outra saída viram a saída 2" \
