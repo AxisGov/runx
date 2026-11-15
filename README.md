@@ -47,14 +47,14 @@ O método Expx é um conjunto de skills que se compõem, instaladas e mantidas p
 
 | Peça | Papel | Relação com a `runx` |
 |---|---|---|
-| **[expxdev](https://github.com/AxisGov/expxdev)** | o CLI: instala, atualiza e diagnostica o ecossistema, e sobe o painel de operação | é quem instala esta skill (`npx expxdev init`) |
+| **[expxdev](https://github.com/AxisGov/expxdev)** | o CLI: instala, atualiza e diagnostica o ecossistema, e sobe o painel de operação | é quem instala esta skill (`expx init`, com o CLI instalado pela [release do expxdev](https://github.com/AxisGov/expxdev#instalar-a-partir-da-release)) |
 | **[sprintx](https://github.com/AxisGov/sprintx)** | **Build** — feature nova, F1…F6 | skill irmã; mesmos contratos, gatilho diferente |
 | **runx** *(este repositório)* | **Run** — ocorrência em produção, E1…E5 | — |
-| **[legadox](https://github.com/bittencourtthulio/legadox)** | **camada** de segurança para código legado | endurece os estágios da `runx` quando existe `PERFIL.md` |
-| **[stackx](https://github.com/bittencourtthulio/stackx)** | **camada** de convenções do repositório | a `runx` lê o `CONVENCOES.md` antes de planejar e de corrigir |
+| **[legadox](https://github.com/AxisGov/legadox)** | **camada** de segurança para código legado | endurece os estágios da `runx` quando existe `PERFIL.md` |
+| **[stackx](https://github.com/AxisGov/stackx)** | **camada** de convenções do repositório | a `runx` lê o `CONVENCOES.md` antes de planejar e de corrigir |
 | **[mergex](https://github.com/AxisGov/mergex)** | entrega: branch, commit por task, PR e pacote de QA | abre a branch no início do E3 e entrega entre o E4 e o E5 |
-| **[memox](https://github.com/bittencourtthulio/MemoX)** | **camada** de memória do projeto | consultada no E1 sobre os arquivos impactados; a `runx` dispara a reindexação no E5 |
-| **[prodx](https://github.com/bittencourtthulio/prodx)** | **camada** de produto: decide **se** há trabalho | roda antes do E1: o `BRIEFING.md` assinado vira o `00-OCORRENCIA.md` |
+| **[memox](https://github.com/AxisGov/MemoX)** | **camada** de memória do projeto | consultada no E1 sobre os arquivos impactados; a `runx` dispara a reindexação no E5 |
+| **[prodx](https://github.com/AxisGov/prodx)** | **camada** de produto: decide **se** há trabalho | roda antes do E1: o `BRIEFING.md` assinado vira o `00-OCORRENCIA.md` |
 | **[buildx](https://github.com/AxisGov/buildx)** | orquestra um projeto inteiro, da descrição ao sistema pronto | a `runx` não participa dela — a `buildx` constrói, não corrige; mas o projeto que ela entrega já vem com a `runx` instalada, para quem receber o sistema tratar defeito |
 
 **Camadas** (`legadox`, `stackx`, `memox`, `prodx`) sozinhas não fazem nada — elas modificam o comportamento da `sprintx` e da `runx`. A `prodx` é a única que roda **antes** de tudo: ela decide *se* há trabalho, e só depois a `runx` decide *como* fazê-lo. A ausência de qualquer irmã nunca quebra o fluxo desta skill: insumo que não existe vira aviso do que falta, nunca invenção.
@@ -485,7 +485,7 @@ docs/eventos/<OC-ID>.jsonl
   <img alt="O rastro de eventos: um arquivo append-only, uma linha JSON por evento, lido pelo painel de operação" src=".github/assets/anim/rastro.svg" width="100%">
 </picture>
 
-É o que o **painel de operação** (`npx expxdev panel`) lê para mostrar o que aconteceu e quando — fase iniciada e concluída, task concluída ou bloqueada, suíte executada, arquivo alterado, regra violada, veredito emitido. Ninguém edita à mão.
+É o que o **painel de operação** (`expx panel`) lê para mostrar o que aconteceu e quando — fase iniciada e concluída, task concluída ou bloqueada, suíte executada, arquivo alterado, regra violada, veredito emitido. Ninguém edita à mão.
 
 Duas coisas que só o rastro revela: **quantas voltas ao E3 o QA causou** em cada ocorrência — que é um indicador honesto de qualidade do plano, porque plano ruim gera volta — e a **duração real de cada task**, sem ninguém anotar nada.
 
@@ -544,7 +544,7 @@ MIT
 <a href="https://github.com/AxisGov/buildx">buildx</a> ·
 <a href="https://github.com/AxisGov/sprintx">sprintx</a> ·
 runx ·
-<a href="https://github.com/bittencourtthulio/legadox">legadox</a> ·
-<a href="https://github.com/bittencourtthulio/stackx">stackx</a> ·
+<a href="https://github.com/AxisGov/legadox">legadox</a> ·
+<a href="https://github.com/AxisGov/stackx">stackx</a> ·
 <a href="https://github.com/AxisGov/mergex">mergex</a></sub>
 </div>
