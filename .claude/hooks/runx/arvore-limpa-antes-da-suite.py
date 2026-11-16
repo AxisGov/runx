@@ -83,6 +83,8 @@ def _sujos_fora_do_escopo(raiz, pasta):
         n = _escopo.normaliza(caminho)
         if not n or _escopo.LIVRE.search(n) or _escopo.TESTE.search(n):
             continue
+        if R.fora_do_projeto(n, raiz):
+            continue  # rascunho de ferramenta, worktree aninhado ou ignorado
         if n not in permitidos:
             fora.append(n)
     return fora

@@ -65,6 +65,55 @@ def rel(caminho, raiz=None):
     return relativo
 
 
+def fora_do_projeto(relativo, raiz=None):
+    """True quando o caminho (relativo a raiz) nao e trabalho deste projeto.
+
+    Ignorado pelo Git, dentro de outro repositorio ou worktree aninhado
+    (`.pylot-tmp/wt-*`), ou numa pasta oculta de topo sem nenhum arquivo
+    versionado (`.pylot-tmp`, `.expxv`: copias e rascunhos de ferramenta).
+    Fora da raiz o `rel()` ja devolve None. No conselhos (2026-11-16), 85% dos
+    avisos de escopo e arvore-limpa eram desses caminhos.
+    """
+    import subprocess
+
+    if not relativo:
+        return True
+    raiz = raiz or raiz_repo()
+    c = relativo.replace(os.sep, "/")
+    while c.startswith("./"):
+        c = c[2:]
+    partes = c.rstrip("/").split("/")
+
+    def git(*args):
+        try:
+            return subprocess.run(["git", "-C", raiz, *args], capture_output=True, text=True, timeout=5)
+        except Exception:
+            return None
+
+    topo = partes[0]
+    if topo.startswith(".") and len(partes) > 1:
+        # versionado no indice OU em HEAD: o `git rm` preparado do ultimo arquivo da pasta
+        # esvazia o indice, mas a exclusao continua sendo do projeto (CodeRabbit no runx#29)
+        indice = git("ls-files", "--", topo)
+        head = git("ls-tree", "-r", "--name-only", "HEAD", "--", topo)
+        versionado = any(r is not None and r.returncode == 0 and r.stdout.strip() for r in (indice, head))
+        if not versionado:
+            return True
+    r = git("check-ignore", "-q", "--", c)
+    if r is not None and r.returncode == 0:
+        return True
+    # os ancestrais e, quando e pasta (o `git status` mostra o repositorio aninhado pela propria
+    # pasta, `vendor/copia/`), ela mesma; um submodulo versionado continua do projeto
+    fim = len(partes) + (1 if os.path.isdir(os.path.join(raiz, *partes)) else 0)
+    for i in range(1, fim):
+        if os.path.exists(os.path.join(raiz, *partes[:i], ".git")):
+            r = git("ls-files", "--stage", "--", "/".join(partes[:i]))
+            if r is not None and r.returncode == 0 and r.stdout.startswith("160000"):
+                return False
+            return True
+    return False
+
+
 # ------------------------------------------------------------------ entrada
 
 # `ler_evento()` guarda aqui o `session_id` do payload, para que `grava()` o
