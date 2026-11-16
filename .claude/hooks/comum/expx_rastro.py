@@ -92,14 +92,24 @@ def fora_do_projeto(relativo, raiz=None):
 
     topo = partes[0]
     if topo.startswith(".") and len(partes) > 1:
-        r = git("ls-files", "--", topo)
-        if r is None or r.returncode != 0 or not r.stdout.strip():
+        # versionado no indice OU em HEAD: o `git rm` preparado do ultimo arquivo da pasta
+        # esvazia o indice, mas a exclusao continua sendo do projeto (CodeRabbit no runx#29)
+        indice = git("ls-files", "--", topo)
+        head = git("ls-tree", "-r", "--name-only", "HEAD", "--", topo)
+        versionado = any(r is not None and r.returncode == 0 and r.stdout.strip() for r in (indice, head))
+        if not versionado:
             return True
     r = git("check-ignore", "-q", "--", c)
     if r is not None and r.returncode == 0:
         return True
-    for i in range(1, len(partes)):
+    # os ancestrais e, quando e pasta (o `git status` mostra o repositorio aninhado pela propria
+    # pasta, `vendor/copia/`), ela mesma; um submodulo versionado continua do projeto
+    fim = len(partes) + (1 if os.path.isdir(os.path.join(raiz, *partes)) else 0)
+    for i in range(1, fim):
         if os.path.exists(os.path.join(raiz, *partes[:i], ".git")):
+            r = git("ls-files", "--stage", "--", "/".join(partes[:i]))
+            if r is not None and r.returncode == 0 and r.stdout.startswith("160000"):
+                return False
             return True
     return False
 

@@ -3,6 +3,8 @@
 # funcionavam. Este banco fixa os casos que ja deram errado uma vez, para que
 # nao voltem em silencio.
 set -uo pipefail
+# hook do Git herdado nao pode levar as fixtures ao repositorio do chamador (CodeRabbit no runx#29)
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
 export PYTHONDONTWRITEBYTECODE=1  # a suíte não deixa .pyc na árvore dos hooks (DR-89)
 
 H="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -188,6 +190,15 @@ def checa(nome, cond):
 checa("fora_do_projeto: .pylot-tmp/wt/ (git status de repositorio aninhado)", R.fora_do_projeto(".pylot-tmp/wt/", w))
 checa("fora_do_projeto: .env no topo continua do projeto", not R.fora_do_projeto(".env", w))
 checa("fora_do_projeto: .github versionado continua do projeto", not R.fora_do_projeto(".github/x.yml", w))
+import subprocess
+os.makedirs(os.path.join(w, "vendor", "copia"), exist_ok=True)
+subprocess.run(["git", "-C", os.path.join(w, "vendor", "copia"), "init", "-q"], capture_output=True)
+checa("fora_do_projeto: vendor/copia/ (repositorio aninhado pela propria pasta)", R.fora_do_projeto("vendor/copia/", w))
+g = lambda *a: subprocess.run(["git", "-C", w, "-c", "user.email=t@t", "-c", "user.name=t", *a], capture_output=True)
+os.makedirs(os.path.join(w, ".unica"), exist_ok=True)
+open(os.path.join(w, ".unica", "so.yml"), "w").write("x")
+g("add", ".unica/so.yml"); g("commit", "-qm", "unica"); g("rm", "-q", ".unica/so.yml")
+checa("fora_do_projeto: git rm preparado do ultimo arquivo da pasta continua do projeto", not R.fora_do_projeto(".unica/so.yml", w))
 sys.exit(1 if falhas else 0)
 PY
 [ $? -eq 0 ] && ok=$((ok+1)) || falhou=$((falhou+1))
