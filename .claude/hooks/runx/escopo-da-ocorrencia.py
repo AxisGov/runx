@@ -104,6 +104,8 @@ def main():
     alvo = normaliza(caminho)
     if not alvo or LIVRE.search(alvo) or TESTE.search(alvo):
         sys.exit(0)
+    if R.fora_do_projeto(alvo):
+        sys.exit(0)  # rascunho de ferramenta, worktree aninhado ou ignorado
 
     pasta = R.pasta_ocorrencia()
     if not pasta:

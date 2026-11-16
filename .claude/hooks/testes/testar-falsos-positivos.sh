@@ -161,6 +161,38 @@ conf 0 ".expx/hooks.json nunca e cobrado por escopo" esc .expx/hooks.json
 conf 0 ".github/workflows nao e cobrado"             esc .github/workflows/ci.yml
 
 echo
+echo "== escopo: o que nao e do projeto nao e cobrado (DR-121) =="
+# No conselhos (2026-11-16), 85% dos avisos de escopo e arvore-limpa eram de copias e
+# rascunhos de ferramenta dentro da arvore: .pylot-tmp/ (worktrees) e .expxv/
+echo '{"hooks":{"escopo-da-ocorrencia":"bloqueio"}}' > "$W/.expx/hooks.json"
+git -C "$W" init -q -b main >/dev/null 2>&1
+mkdir -p "$W/.pylot-tmp/wt/src" "$W/.expxv/m" "$W/build" "$W/.github"
+git -C "$W/.pylot-tmp/wt" init -q >/dev/null 2>&1
+printf 'build/\n' > "$W/.gitignore"; printf 'on: push\n' > "$W/.github/x.yml"
+git -C "$W" add .gitignore .github/x.yml >/dev/null 2>&1
+conf 0 "worktree aninhado (.pylot-tmp/wt) nao e cobrado"    esc .pylot-tmp/wt/src/x.ts
+conf 0 "pasta oculta sem nada versionado (.expxv) nao e cobrada" esc .expxv/m/t-18.md
+conf 0 "caminho ignorado pelo Git nao e cobrado"            esc build/x.ts
+conf 2 "arquivo do projeto fora do escopo continua barrando" esc src/outro/y.ts
+echo '{}' > "$W/.expx/hooks.json"
+python3 - "$H" "$W" <<'PY'
+import sys, os
+sys.path.insert(0, os.path.join(sys.argv[1], "comum"))
+import expx_rastro as R
+w = sys.argv[2]
+falhas = 0
+def checa(nome, cond):
+    global falhas
+    print(f"  {'ok   ' if cond else 'FALHA'} {nome}")
+    if not cond: falhas += 1
+checa("fora_do_projeto: .pylot-tmp/wt/ (git status de repositorio aninhado)", R.fora_do_projeto(".pylot-tmp/wt/", w))
+checa("fora_do_projeto: .env no topo continua do projeto", not R.fora_do_projeto(".env", w))
+checa("fora_do_projeto: .github versionado continua do projeto", not R.fora_do_projeto(".github/x.yml", w))
+sys.exit(1 if falhas else 0)
+PY
+[ $? -eq 0 ] && ok=$((ok+1)) || falhou=$((falhou+1))
+
+echo
 echo "== uma-ocorrencia-por-arvore: nao acusa a si mesma, nem a que ja fechou =="
 W2="$(mktemp -d)"
 OCA="$W2/docs/manutencao/OC-2026-0100-primeira"; mkdir -p "$OCA"

@@ -65,6 +65,45 @@ def rel(caminho, raiz=None):
     return relativo
 
 
+def fora_do_projeto(relativo, raiz=None):
+    """True quando o caminho (relativo a raiz) nao e trabalho deste projeto.
+
+    Ignorado pelo Git, dentro de outro repositorio ou worktree aninhado
+    (`.pylot-tmp/wt-*`), ou numa pasta oculta de topo sem nenhum arquivo
+    versionado (`.pylot-tmp`, `.expxv`: copias e rascunhos de ferramenta).
+    Fora da raiz o `rel()` ja devolve None. No conselhos (2026-11-16), 85% dos
+    avisos de escopo e arvore-limpa eram desses caminhos.
+    """
+    import subprocess
+
+    if not relativo:
+        return True
+    raiz = raiz or raiz_repo()
+    c = relativo.replace(os.sep, "/")
+    while c.startswith("./"):
+        c = c[2:]
+    partes = c.rstrip("/").split("/")
+
+    def git(*args):
+        try:
+            return subprocess.run(["git", "-C", raiz, *args], capture_output=True, text=True, timeout=5)
+        except Exception:
+            return None
+
+    topo = partes[0]
+    if topo.startswith(".") and len(partes) > 1:
+        r = git("ls-files", "--", topo)
+        if r is None or r.returncode != 0 or not r.stdout.strip():
+            return True
+    r = git("check-ignore", "-q", "--", c)
+    if r is not None and r.returncode == 0:
+        return True
+    for i in range(1, len(partes)):
+        if os.path.exists(os.path.join(raiz, *partes[:i], ".git")):
+            return True
+    return False
+
+
 # ------------------------------------------------------------------ entrada
 
 # `ler_evento()` guarda aqui o `session_id` do payload, para que `grava()` o
