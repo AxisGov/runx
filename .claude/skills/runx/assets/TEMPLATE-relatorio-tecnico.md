@@ -13,7 +13,7 @@ regressao_de: {{copiado de 01-CAUSA-RAIZ.md | null}}
 testes_adicionados: {{numero de testes criados, incluindo o de regressao}}
 ---
 
-> `palavras_chave` e `regressao_de` sao COPIADOS de `01-CAUSA-RAIZ.md`, sem recalcular: `null` la e `null` aqui. Nunca invente um vinculo de regressao no fechamento (regra 15). `evidencia_regressao` nao entra neste YAML — a linha de evidencia vai na secao 4.
+> `palavras_chave` e `regressao_de` sao copiados de `01-CAUSA-RAIZ.md` sem recalcular: o valor de la se repete aqui, inclusive `null`. Nunca invente um vinculo de regressao no fechamento (regra 15). `evidencia_regressao` nao entra neste YAML — a linha de evidencia vai na secao 4.
 
 > Preencha pelo contrato e pela instrução comum de templates em `references/00-schema.md`.
 
